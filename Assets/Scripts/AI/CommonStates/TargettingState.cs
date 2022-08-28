@@ -78,7 +78,7 @@ public class TargettingState : AIStates
     private int CalculateDistanceScore(Unit unit)
     {
         //使用A星算法，得到目标所在格子的位置
-        Tile endTile = PathFinding.Instance.AStarPathFind(aiUnit.standOnTile, unit.standOnTile); //目的是拿到最短路径
+        Tile endTile = PathFinding.Instance.AStarPathFindDistance(aiUnit.standOnTile, unit.standOnTile); //目的是拿到最短路径
         Tile tempTile = endTile;
 
         int score = 100;
