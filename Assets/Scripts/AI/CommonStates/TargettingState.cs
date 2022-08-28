@@ -16,6 +16,7 @@ public class TargettingState : AIStates
 
     public void OnEnter()
     {
+        Debug.Log("Targetting");
         this.aiUnit.Idle();
 
         if((GameManager.Instance.aiTarget = FindFinalTagetUnit()) != null)
@@ -82,7 +83,7 @@ public class TargettingState : AIStates
 
         int score = 100;
 
-        while(tempTile.parentTile != null)
+        while(tempTile != null)
         {
             score -= 1;
             tempTile = tempTile.parentTile;

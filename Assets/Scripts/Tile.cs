@@ -161,7 +161,6 @@ public class Tile : MonoBehaviour
     public void HightAttackableTile()
     {
         render.color = attackableHightColor;
-        gm.attackRangeTiles.Add(this);
     }
     public void RestHightMovableTile()
     {   

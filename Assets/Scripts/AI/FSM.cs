@@ -35,9 +35,9 @@ public class FSM : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        aiUnit = gameObject.GetComponent<Unit>(); // ====================================
+        aiUnit = gameObject.GetComponent<Unit>(); 
         stateDict = new Dictionary<StateType, AIStates>();
-        stateDict.Add(StateType.IDLE, new IdleState(this));
+        stateDict.Add(StateType.IDLE, new IdleState(this) );
         stateDict.Add(StateType.TARGETTING, new TargettingState(this));
         stateDict.Add(StateType.MOVING, new MovingState(this));
 

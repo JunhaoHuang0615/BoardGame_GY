@@ -50,7 +50,7 @@ public class Unit : MonoBehaviour
     public GameObject attackPrefab;
     public Animator attackPrefabAnimator;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         gm = FindObjectOfType<GameManager>();
         obp = FindObjectOfType<ObjectPool>();
@@ -197,6 +197,8 @@ public class Unit : MonoBehaviour
                             if (neighbor.unitOnTile != null)
                                 neighbor.unitOnTile.HightAttackUnitSprite();
                         }
+                        if(!gm.attackRangeTiles.Contains(neighbor))
+                            gm.attackRangeTiles.Add(neighbor);
                     }
                 }
             }

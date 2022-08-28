@@ -105,7 +105,37 @@ public class GameManager : MonoBehaviour
 
             }
         }
+
+        if(nowPlayerID == 2)
+        {
+            StartCoroutine(AITurn());
+        }
     }
+
+    public IEnumerator AITurn()
+    {
+        List<Unit> aiList = new List<Unit>();
+        foreach(var unit in allUnits)
+        {
+            if(unit.playerID == 2)
+            {
+                aiList.Add(unit);
+            }
+        }
+
+        foreach(var ai in aiList)
+        {
+            this.selectedUnit = ai;
+            ai.selected = true;
+            //
+            while(ai.hasMoved == false)
+            {
+                yield return null;
+            }
+        }
+        TurnEnd();
+    }
+
     public void GetEdgeTile()
     {
         EnableAllUnitCollider(false);

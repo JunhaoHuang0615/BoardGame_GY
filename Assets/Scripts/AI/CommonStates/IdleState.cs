@@ -27,7 +27,7 @@ public class IdleState : AIStates
     public void OnUpdate()
     {
        //进入选择对象的State Targetting
-       if(aiUnit.selected = true)
+       if(aiUnit.selected == true)
         {
             this.fsm.TransitionToState(StateType.TARGETTING);
         }

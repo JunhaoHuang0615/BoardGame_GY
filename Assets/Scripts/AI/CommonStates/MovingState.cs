@@ -16,6 +16,16 @@ public class MovingState : AIStates
 
     public void OnEnter()
     {
+        Debug.Log("Moving");
+        Tile targetTile = DesideMovingTile();
+        if(targetTile != null && targetTile != aiUnit.standOnTile)
+        {
+            aiUnit.canExcute = true;
+            Tile endTile = PathFinding.Instance.AStarPathFind(aiUnit.standOnTile,targetTile);
+            PathFinding.Instance.GetPath(endTile);
+
+            targetTile.SendUnitHere(aiUnit,PathFinding.Instance.path);
+        }
     }
 
     public void OnExit()
@@ -39,7 +49,10 @@ public class MovingState : AIStates
         {
             GameManager.Instance.attackRangeTiles.Clear();
         }
+        GameManager.Instance.ResetMovePath();
+        GameManager.Instance.ResetMoveableRange();
         aiUnit.ShowAttackRange(targetUnit.standOnTile); //会将攻击范围的格子存储于gm里的attackRangeTiles;
+        aiUnit.DFSShowMoveRange(aiUnit.moveRange, aiUnit.standOnTile);
         //确定潜在可移动的格子
         List<Tile> potentialMoveTile = new List<Tile>();
         foreach(var tile in GameManager.Instance.attackRangeTiles)
@@ -65,7 +78,7 @@ public class MovingState : AIStates
 
         if(tileScoreDict.Count > 0)
         {
-            targetTile = tileScoreDict[0]; //首先让result等于列表中的第一个元素
+            targetTile = potentialMoveTile[0]; //首先让result等于列表中的第一个元素
             foreach (var tile in potentialMoveTile)
             {
                 if (tileScoreDict[tile] > tileScoreDict[targetTile])
@@ -86,7 +99,7 @@ public class MovingState : AIStates
 
         float score = 0;
 
-        while(tempTile.parentTile != null)
+        while(tempTile != null)
         {
             score += 1;
             tempTile = tempTile.parentTile;
