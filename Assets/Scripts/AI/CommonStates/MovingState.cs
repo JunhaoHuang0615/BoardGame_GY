@@ -35,7 +35,10 @@ public class MovingState : AIStates
 
     public void OnUpdate()
     {
-
+        if(aiUnit.hasMoved == true)
+        {
+            fsm.TransitionToState(StateType.STAND);
+        }
     }
 
     public Tile DesideMovingTile()

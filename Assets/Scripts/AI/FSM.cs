@@ -40,6 +40,7 @@ public class FSM : MonoBehaviour
         stateDict.Add(StateType.IDLE, new IdleState(this) );
         stateDict.Add(StateType.TARGETTING, new TargettingState(this));
         stateDict.Add(StateType.MOVING, new MovingState(this));
+        stateDict.Add(StateType.STAND, new StandState(this));
 
         TransitionToState(StateType.IDLE);
     }

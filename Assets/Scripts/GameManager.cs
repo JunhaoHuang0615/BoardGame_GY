@@ -128,7 +128,7 @@ public class GameManager : MonoBehaviour
             this.selectedUnit = ai;
             ai.selected = true;
             //
-            while(ai.hasMoved == false)
+            while(ai.GetComponent<FSM>().GetCurrentState() != StateType.STAND)
             {
                 yield return null;
             }

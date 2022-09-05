@@ -16,6 +16,7 @@ public class IdleState : AIStates
 
     public void OnEnter()
     {
+        Debug.Log("IDLE");
         this.aiUnit.Idle();
     }
 
