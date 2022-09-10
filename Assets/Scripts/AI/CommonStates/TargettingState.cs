@@ -17,7 +17,6 @@ public class TargettingState : AIStates
     public void OnEnter()
     {
         Debug.Log("Targetting");
-        this.aiUnit.Idle();
 
         if((GameManager.Instance.aiTarget = FindFinalTagetUnit()) != null)
         {   
@@ -58,14 +57,14 @@ public class TargettingState : AIStates
 
         foreach(var tile in GameManager.Instance.moveableTiles)
         {
-            if(tile.unitOnTile != null && tile.unitOnTile.playerID != aiUnit.playerID && (!potentialTargets.Contains(tile.unitOnTile)))
+            if(tile.unitOnTile != null &&tile.unitOnTile.tag == "Player" && tile.unitOnTile.playerID != aiUnit.playerID && (!potentialTargets.Contains(tile.unitOnTile)))
             {
                 potentialTargets.Add(tile.unitOnTile);
             }
         }
         foreach (var tile in GameManager.Instance.attackRangeTiles)
         {
-            if (tile.unitOnTile != null && tile.unitOnTile.playerID != aiUnit.playerID && (!potentialTargets.Contains(tile.unitOnTile)))
+            if (tile.unitOnTile != null && tile.unitOnTile.tag == "Player" && tile.unitOnTile.playerID != aiUnit.playerID && (!potentialTargets.Contains(tile.unitOnTile)))
             {
                 potentialTargets.Add(tile.unitOnTile);
             }
