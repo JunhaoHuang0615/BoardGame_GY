@@ -5,11 +5,18 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneLoader : MonoBehaviour
-{   
+{
+    public static SceneLoader Instance { get; private set; }
     public Animator transition;
     private void Awake()
     {
+        Instance = this;
         DontDestroyOnLoad(this);
+    }
+
+    public void StartBattle()
+    {
+        StartCoroutine(this.LoadBattleScene());
     }
 
     public IEnumerator LoadBattleScene()

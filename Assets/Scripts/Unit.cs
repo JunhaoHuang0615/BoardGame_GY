@@ -45,6 +45,7 @@ public class Unit : MonoBehaviour
     public PlayerAnimator playerAnimator;
     public bool canExcute; //判定角色是否可以执行操作
     public bool canAttack;
+    public bool isAttacking;
 
     public BattlePrefabType battlePreType;
     public GameObject attackPrefab;

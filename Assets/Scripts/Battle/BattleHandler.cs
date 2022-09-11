@@ -29,6 +29,7 @@ public class BattleHandler : MonoBehaviour
     {
         this.activeUnit = activeUnit;
         this.passiveUnit = passiveUnit;
+        this.activeUnit.isAttacking = true;
         //生成攻击时所有的Prefab
         activeUnit.attackPrefab = objectPool.GetGameObject(activeUnit.battlePreType);
         passiveUnit.attackPrefab = objectPool.GetGameObject(passiveUnit.battlePreType);
@@ -84,6 +85,7 @@ public class BattleHandler : MonoBehaviour
         objectPool.ReturnGameObject(activeUnit.battlePreType, activeUnit.attackPrefab);
         objectPool.ReturnGameObject(passiveUnit.battlePreType, passiveUnit.attackPrefab);
         CameraFollow.instance.ReturnCameraPosition();
+        this.activeUnit.isAttacking = false;
         sl.UnLoadBattleScene();
         
 

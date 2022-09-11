@@ -37,7 +37,7 @@ public class MovingState : AIStates
     {
         if(aiUnit.hasMoved == true)
         {
-            fsm.TransitionToState(StateType.STAND);
+            fsm.TransitionToState(StateType.ATTACKING);
         }
     }
 
