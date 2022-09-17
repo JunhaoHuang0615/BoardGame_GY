@@ -7,18 +7,32 @@ public class BattleEventHandlder : MonoBehaviour
 {
     public Unit attackUnit; //攻击者
     public Unit beattacked; //被攻击者
-    public AttackPathProfile pathData; //进攻路线
+    public Dictionary<AttackType, AttackPathProfile> attackTypeDict;
+    public AttackPathProfile pathData;
+    public GameObject parent;
     public Animator attackUnitAnimator; //攻击方的动画组件
-    
-    public IEnumerator AttackMovement()
+    private void Awake()
     {
-        float distanceTravelled = 0; //记录单位在路径上移动了多少
-
-        while (Mathf.Abs(pathData.attackPath.path.length - distanceTravelled)> 0.5f)
+        attackTypeDict = new Dictionary<AttackType, AttackPathProfile>();
+        //自动根据子级的PathData来注册进入Dictionary
+        AttackPathProfile[] groups = parent.GetComponentsInChildren<AttackPathProfile>();
+        foreach(var data in groups)
         {
-            transform.position = pathData.attackPath.path.GetPointAtDistance(distanceTravelled);
-            distanceTravelled = distanceTravelled + (pathData.attackPath.path.length / (pathData.attackEndTime - pathData.attackStartTime) ) * Time.deltaTime;
-            yield return null;
+            if (!attackTypeDict.ContainsKey(data.attackType))
+            {
+                attackTypeDict.Add(data.attackType, data);
+            }
+        }
+
+    }
+
+    public IEnumerator AttackStart()
+    {
+        bool flag  = true;
+        while (flag)
+        {
+            yield return attackTypeDict[attackUnit.attackType].AttackAni();
+            flag = false;
         }
     }
 

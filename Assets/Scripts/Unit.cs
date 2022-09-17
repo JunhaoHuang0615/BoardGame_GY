@@ -50,6 +50,7 @@ public class Unit : MonoBehaviour
     public BattlePrefabType battlePreType;
     public GameObject attackPrefab;
     public Animator attackPrefabAnimator;
+    public AttackType attackType;
     // Start is called before the first frame update
     void Awake()
     {
@@ -132,23 +133,23 @@ public class Unit : MonoBehaviour
         }
         playerAnimator.SetAnimationParam(this,0,0);
     }
-
+    //要求： 动画名称， Attack类型， 动画设置内的Trigger名称，必须完全一致
     public IEnumerator Attack(Unit attackedUnit)
     {
         attackPrefabAnimator = attackPrefab.GetComponentInChildren<Animator>();
-        attackPrefabAnimator.SetTrigger("Attack"); //开启攻击动画
+        attackPrefabAnimator.SetTrigger(GetAttackTrigger(this.attackType)); //开启攻击动画
         attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 16;
         attackedUnit.attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 15;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().attackUnit = this;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().beattacked = attackedUnit;
 
 
-        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(GetAttackTrigger(this.attackType)))
         {
             yield return null;
         }
         //判断当前动画是否已经完成
-        while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(GetAttackTrigger(this.attackType)))
         {
             yield return null; //卡在动画播放
         }
@@ -500,6 +501,11 @@ public class Unit : MonoBehaviour
         selected = false;
         playerAnimator.SetAnimationParam(this,0,0);
         buttonList.CloseButtons();
+    }
+
+    public string GetAttackTrigger(AttackType attackType)
+    {
+        return attackType.ToString();
     }
 
     public void Stand()
