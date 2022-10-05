@@ -7,18 +7,31 @@ public class BattleEventHandlder : MonoBehaviour
 {
     public Unit attackUnit; //攻击者
     public Unit beattacked; //被攻击者
-    public AttackPathProfile pathData; //进攻路线
     public Animator attackUnitAnimator; //攻击方的动画组件
-    
+    public Dictionary<AttackType, AttackPathProfile> attackPathDict;
+    public GameObject pathgroup;
+
+    private void Awake()
+    {
+        attackPathDict = new Dictionary<AttackType, AttackPathProfile>();
+        AttackPathProfile[] group = pathgroup.GetComponentsInChildren<AttackPathProfile>();
+        foreach(var pathData in group)
+        {
+            if (!attackPathDict.ContainsKey(pathData.attackType))
+            {
+                attackPathDict.Add(pathData.attackType, pathData);
+            }
+        }
+
+    }
+
     public IEnumerator AttackMovement()
     {
-        float distanceTravelled = 0; //记录单位在路径上移动了多少
-
-        while (Mathf.Abs(pathData.attackPath.path.length - distanceTravelled)> 0.5f)
+        bool flag = true;
+        while (flag)
         {
-            transform.position = pathData.attackPath.path.GetPointAtDistance(distanceTravelled);
-            distanceTravelled = distanceTravelled + (pathData.attackPath.path.length / (pathData.attackEndTime - pathData.attackStartTime) ) * Time.deltaTime;
-            yield return null;
+            yield return attackPathDict[attackUnit.attackType].StartAttack();
+            flag = false;
         }
     }
 
@@ -30,13 +43,11 @@ public class BattleEventHandlder : MonoBehaviour
     }
     public IEnumerator AttackUnitMoveBack()
     {
-        float distanceTravelled = 0; //记录单位在路径上移动了多少
-
-        while (Mathf.Abs(pathData.backPath.path.length - distanceTravelled) > 0.5f)
+        bool flag = true;
+        while (flag)
         {
-            transform.position = pathData.backPath.path.GetPointAtDistance(distanceTravelled);
-            distanceTravelled = distanceTravelled + (pathData.backPath.path.length / (pathData.backEndTIme - pathData.backStartTime)) * Time.deltaTime;
-            yield return null;
+            yield return attackPathDict[attackUnit.attackType].ReturnAttack();
+            flag = false;
         }
     }
 

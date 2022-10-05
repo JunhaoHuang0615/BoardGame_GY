@@ -46,6 +46,7 @@ public class Unit : MonoBehaviour
     public bool canExcute; //判定角色是否可以执行操作
     public bool canAttack;
     public bool isAttacking;
+    public AttackType attackType;
 
     public BattlePrefabType battlePreType;
     public GameObject attackPrefab;
@@ -136,19 +137,19 @@ public class Unit : MonoBehaviour
     public IEnumerator Attack(Unit attackedUnit)
     {
         attackPrefabAnimator = attackPrefab.GetComponentInChildren<Animator>();
-        attackPrefabAnimator.SetTrigger("Attack"); //开启攻击动画
+        attackPrefabAnimator.SetTrigger(attackType.ToString()); //开启攻击动画
         attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 16;
         attackedUnit.attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 15;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().attackUnit = this;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().beattacked = attackedUnit;
 
 
-        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null;
         }
         //判断当前动画是否已经完成
-        while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))
+        while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null; //卡在动画播放
         }
