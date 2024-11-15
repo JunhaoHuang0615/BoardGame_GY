@@ -8,11 +8,14 @@ public enum TileType
     Plant,
     Mountain,
     Water,
- 
+    Wall,
+
 }
 public class Tile : MonoBehaviour
 {
-    public Sprite[] sprites;
+    // public Sprite[] sprites;
+    public TileDataManager tileDataManager;
+    public PlatformType platformType;
     private SpriteRenderer render;
     public TileType tileType;
     private PathFinding pm;
@@ -25,12 +28,14 @@ public class Tile : MonoBehaviour
     public bool isMoveableTile; //可被移动的格子，鼠标点击时用
     public Color moveableHightColor;
     public Color attackableHightColor;
+    public Color enterTileColor;
 
     //A星算法参数
     public int gcost;
     public int hcost;
     public int fcost;
     public Tile parentTile; //记录上一个点
+    public bool needToBeReset = true;
 
     //深度算法属性
     public int needAcrtionPoint; //所需行动点数
@@ -52,9 +57,12 @@ public class Tile : MonoBehaviour
         gm = FindObjectOfType<GameManager>();
         pm = FindObjectOfType<PathFinding>();
         um = FindObjectOfType<UIManager>();
+        tileDataManager = FindObjectOfType<TileDataManager>();
         render = GetComponent<SpriteRenderer>();
-        int r = Random.Range(0, sprites.Length);
-        render.sprite = sprites[r];
+        int r = Random.Range(0, tileDataManager.tileSprites.Count);
+        platformType = tileDataManager.platforms[r];
+        render.sprite = tileDataManager.tileSprites[r];
+
         UnitOnTile();
         //让此方法晚一点点执行
         Invoke("GetNeighborTiles",0.1f);
@@ -85,9 +93,20 @@ public class Tile : MonoBehaviour
             Tile endTile = pm.AStarPathFind(gm.selectedUnit.standOnTile, this);
             ShowArrow(endTile);
             pm.GetPath(endTile);
+            return;
+        }
+        if (needToBeReset == true) { 
+            HighlightEnterTile();
         }
 
 
+    }
+    private void OnMouseExit()
+    {
+        if (this.needToBeReset)
+        {  
+            ResetEnterTile();
+        }
     }
     public void UnitOnTile()
     {
@@ -155,17 +174,28 @@ public class Tile : MonoBehaviour
 
     public void HightMoveableTile()
     {
+        needToBeReset = false;
         render.color = moveableHightColor;
         isMoveableTile = true;
     }
     public void HightAttackableTile()
     {
+        needToBeReset = false;
         render.color = attackableHightColor;
+    }
+    public void HighlightEnterTile()
+    {
+        render.color = enterTileColor;
+    }
+    public void ResetEnterTile()
+    {
+        render.color = Color.white;
     }
     public void RestHightMovableTile()
     {   
         render.color = Color.white;
         isMoveableTile = false;
+        needToBeReset = true;
     }
     public int GetNeedMoveAbility(Unit selectedUnit)
     {   
@@ -363,6 +393,34 @@ public class Tile : MonoBehaviour
             //gm.selectedUnit = null;
         }
 
+    }
+    //上：Vector2.up 下：Vector2.down
+    public Tile GetNeighbourInDirection(Vector2 direction)
+    {
+        // 一時的に障害物のコライダーを無効にする
+        foreach (var unit in gm.allUnits)
+        {
+            unit.GetComponent<Collider2D>().enabled = false;
+        }
+
+        // 指定された方向にRaycastを飛ばす
+/*        Vector2 raypoint = new Vector2(transform.position.x, transform.position.y);
+        RaycastHit2D hit = Physics2D.Raycast(raypoint, direction);*/
+        Vector2 raypoint = new Vector2(transform.position.x, transform.position.y);
+        //相邻位置上方的Tile
+        RaycastHit2D hit = Physics2D.Raycast(raypoint + direction, direction);
+
+        // コライダーがTileである場合、隣接タイルとして取得
+        if (hit.collider != null && hit.collider.CompareTag("Tile"))
+        {
+            gm.EnablePlayerCollider(true);
+            Tile tile = hit.collider.GetComponent<Tile>();
+            return tile;
+        }
+
+        // 見つからなかった場合は null を返す
+        gm.EnablePlayerCollider(true);
+        return null;
     }
 
 

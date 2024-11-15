@@ -7,9 +7,6 @@ using UnityEngine.EventSystems;
 public class ButtonListTransform : MonoBehaviour
 {
     public Transform parentTransform; //为了作为子级
-    public ButtonFunction moveButton;
-    public ButtonFunction attackButton;
-    public ButtonFunction standButton;
     public EventSystem eventSystem;
     public GraphicRaycaster raycaster;
     public UIManager um;

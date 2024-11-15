@@ -275,10 +275,12 @@ MonoBehaviour:
   isMoveableTile: 0
   moveableHightColor: {r: 0.25943398, g: 0.4913245, b: 1, a: 0.8156863}
   attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
+  enterTileColor: {r: 1, g: 0.94893605, b: 0.2924528, a: 1}
   gcost: 0
   hcost: 0
   fcost: 0
   parentTile: {fileID: 0}
+  needToBeReset: 1
   needAcrtionPoint: 0
   arrow: {fileID: 5176004374586624004}
   corner: {fileID: 4481157868821984891}

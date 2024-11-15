@@ -162,9 +162,17 @@ MonoBehaviour:
   moveableHightColor: {r: 0, g: 0, b: 0, a: 0}
   attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
   buttonList: {fileID: 0}
+  equipList: {fileID: 0}
+  attackEquipList:
+  - Sword
+  - Axe
+  - Bow
+  attackType: 0
   playerAnimator: {fileID: 0}
   canExcute: 0
   canAttack: 0
+  isAttacking: 0
+  battlePreType: 0
   attackPrefab: {fileID: 8273440091368145741, guid: fa9cbc0f2e003b74d8dfddf6e6f066c8,
     type: 3}
   attackPrefabAnimator: {fileID: 0}

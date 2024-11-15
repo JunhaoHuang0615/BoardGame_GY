@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BattleHandler : MonoBehaviour
 {
@@ -9,14 +10,27 @@ public class BattleHandler : MonoBehaviour
     private Unit passiveUnit; //被发起攻击的一方
     private GameManager gm;
     private SceneLoader sl;
+    private Canvas canvas;
+    private TileDataManager tileDataManager;
     private ObjectPool objectPool;
+    private GameObject platform_player1;
+    private GameObject platform_player2;
+    public GameObject player1_healthbar;
+    public GameObject player2_healthbar;
     // Start is called before the first frame update
     void Start()
     {
         gm = FindObjectOfType<GameManager>();
         sl = FindObjectOfType<SceneLoader>();
         objectPool = FindObjectOfType<ObjectPool>();
+        tileDataManager = FindObjectOfType<TileDataManager>();
+        gm.passiveUnitCanCounterAttack = gm.passiveUnit.CanCounterAttack(gm.activeUnit);
         sl.SetActiveSceneByName("BattleScene");
+        if (canvas == null)
+        {
+            Scene battleScene = sl.GetSceneByName("BattleScene");
+            canvas = sl.FindOrCreateCanvasInScene(battleScene);
+        }
         StartCoroutine (StartBattle(gm.activeUnit,gm.passiveUnit));
     }
 
@@ -33,24 +47,136 @@ public class BattleHandler : MonoBehaviour
         //生成攻击时所有的Prefab
         activeUnit.attackPrefab = objectPool.GetGameObject(activeUnit.battlePreType);
         passiveUnit.attackPrefab = objectPool.GetGameObject(passiveUnit.battlePreType);
-        //让PlayerID是1的单位始终在右边
-        if (activeUnit.playerID == 1)
-        {   
-            //-5是为了让此单位更接近摄像机
-            activeUnit.attackPrefab.transform.position = new Vector3(5,0,-5);
-            activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+        activeUnit.attackPrefab.GetComponentInChildren<BattleEventHandlder>().SetBattleHandler(this);
+        passiveUnit.attackPrefab.GetComponentInChildren<BattleEventHandlder>().SetBattleHandler(this);
 
-            passiveUnit.attackPrefab.transform.position = new Vector3(-5,0,-5);
-            passiveUnit.attackPrefab.transform.localScale = new Vector3(-1,1,1);
+
+        HealthController player1_healthbar_controller = null;
+        HealthController player2_healthbar_controller = null;
+        //创建HealBar实例
+        if(activeUnit.playerID == 1)
+        {
+            //说明血条要创建在右边
+            player1_healthbar = objectPool.GetGameObject(GameObjectType.HEALTHBAR_GROUP);
+            player1_healthbar_controller = player1_healthbar.GetComponent<HealthController>();
+            player1_healthbar_controller.Initialize_Healthbar(activeUnit.health,activeUnit.maxHealth);
+
         }
-        else if (passiveUnit.playerID == 1)
-        {   
-            //此时玩家ID1被作为了被发起攻击的对象
-            passiveUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
-            passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+        else
+        {
+            player2_healthbar = objectPool.GetGameObject(GameObjectType.HEALTHBAR_GROUP);
+            player2_healthbar_controller = player2_healthbar.GetComponent<HealthController>();
+            player2_healthbar_controller.Initialize_Healthbar(activeUnit.health, activeUnit.maxHealth);
+        }
+        if (passiveUnit.playerID == 1)
+        {
 
-            activeUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
-            activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            player1_healthbar = objectPool.GetGameObject(GameObjectType.HEALTHBAR_GROUP);
+            player1_healthbar_controller = player1_healthbar.GetComponent<HealthController>();
+            player1_healthbar_controller.Initialize_Healthbar(passiveUnit.health, passiveUnit.maxHealth);
+
+        }
+        else {
+            player2_healthbar = objectPool.GetGameObject(GameObjectType.HEALTHBAR_GROUP);
+            player2_healthbar_controller = player2_healthbar.GetComponent<HealthController>();
+            player2_healthbar_controller.Initialize_Healthbar(passiveUnit.health, passiveUnit.maxHealth);
+
+        }
+        player1_healthbar.transform.SetParent(canvas.transform, false);
+        player2_healthbar.transform.SetParent(canvas.transform, false);
+
+        //地形创建
+        // 检测双方是近战攻击还是远程攻击：
+        if (gm.CheckUnitAdjacent(this.activeUnit, this.passiveUnit))
+        {
+            //是近战
+            //近战攻击： 右边：2.7 -1.5 -5  左边：-2.7，-1.5，-5
+            //player的platform也放在右边
+            if (activeUnit.playerID == 1)
+            {
+                platform_player1 = objectPool.GetGameObject(activeUnit.standOnTile.platformType);
+                platform_player1.transform.position = new Vector3(2.7f, -1.5f, -5);
+                platform_player1.transform.localScale = new Vector3(-1, 1, 1);
+                platform_player2 = objectPool.GetGameObject(passiveUnit.standOnTile.platformType);
+                platform_player2.transform.position = new Vector3(-2.7f, -1.5f, -5);
+                platform_player2.transform.localScale = new Vector3(1, 1, 1);
+
+                //创建角色
+                //z=-5是为了让此单位更接近摄像机
+                activeUnit.attackPrefab.transform.position = new Vector3(2.5f, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                passiveUnit.attackPrefab.transform.position = new Vector3(-2.5f, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else
+            {
+                platform_player1 = objectPool.GetGameObject(passiveUnit.standOnTile.platformType);
+                platform_player1.transform.position = new Vector3(2.7f, -1.5f, -5);
+                platform_player1.transform.localScale = new Vector3(-1, 1, 1);
+                platform_player2 = objectPool.GetGameObject(activeUnit.standOnTile.platformType);
+                platform_player2.transform.position = new Vector3(-2.7f, -1.5f, -5);
+                platform_player2.transform.localScale = new Vector3(1, 1, 1);
+
+                passiveUnit.attackPrefab.transform.position = new Vector3(2.5f, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                activeUnit.attackPrefab.transform.position = new Vector3(-2.5f, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+
+        }
+        else 
+        {
+            //远程的情况
+            //远程攻击： 右边：6 -1.5 -5    左边：-6 -1.5 -5
+            if (activeUnit.playerID == 1) 
+            {
+                platform_player1 = objectPool.GetGameObject(activeUnit.standOnTile.platformType);
+                platform_player1.transform.position = new Vector3(6f, -1.5f, -5);
+                platform_player1.transform.localScale = new Vector3(-1, 1, 1);
+                platform_player2 = objectPool.GetGameObject(passiveUnit.standOnTile.platformType);
+                platform_player2.transform.position = new Vector3(-6f, -1.5f, -5);
+                platform_player2.transform.localScale = new Vector3(1, 1, 1);
+
+                //创建角色
+                //z=-5是为了让此单位更接近摄像机
+                activeUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                passiveUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else
+            {
+                platform_player1 = objectPool.GetGameObject(passiveUnit.standOnTile.platformType);
+                platform_player1.transform.position = new Vector3(6, -1.5f, -5);
+                platform_player1.transform.localScale = new Vector3(-1, 1, 1);
+                platform_player2 = objectPool.GetGameObject(activeUnit.standOnTile.platformType);
+                platform_player2.transform.position = new Vector3(-6, -1.5f, -5);
+                platform_player2.transform.localScale = new Vector3(1, 1, 1);
+
+                //创建角色
+                //此时玩家ID1被作为了被发起攻击的对象
+                passiveUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                activeUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+
+
+        }
+        //放置血条
+        if (activeUnit.playerID == 1)
+        {
+            player1_healthbar.transform.position = activeUnit.attackPrefab.transform.position + new Vector3(0, 2, 0);
+            player2_healthbar.transform.position = passiveUnit.attackPrefab.transform.position + new Vector3(-2, 2, 0);
+        }
+        else
+        {
+            player1_healthbar.transform.position = passiveUnit.attackPrefab.transform.position + new Vector3(0, 2, 0);
+            player2_healthbar.transform.position = activeUnit.attackPrefab.transform.position + new Vector3(-2, 2, 0);
         }
 
         yield return new WaitForSeconds(5);
@@ -77,13 +203,25 @@ public class BattleHandler : MonoBehaviour
             }
             if(passivePlayerTurns > 0)
             {
-
-                yield return AttackTurn(passiveUnit,activeUnit);
-                passivePlayerTurns--;
+                if (gm.passiveUnitCanCounterAttack)
+                {
+                    yield return AttackTurn(passiveUnit,activeUnit);
+                    passivePlayerTurns--;
+                }
+                else
+                {
+                    passivePlayerTurns--;
+                }
             }
         }
         objectPool.ReturnGameObject(activeUnit.battlePreType, activeUnit.attackPrefab);
         objectPool.ReturnGameObject(passiveUnit.battlePreType, passiveUnit.attackPrefab);
+        objectPool.ReturnGameObject(activeUnit.standOnTile.platformType, platform_player1);
+        objectPool.ReturnGameObject(passiveUnit.standOnTile.platformType, platform_player2);
+        player1_healthbar.GetComponent<HealthController>().ReturnSlider();
+        objectPool.ReturnGameObject(GameObjectType.HEALTHBAR_GROUP, player1_healthbar);
+        player2_healthbar.GetComponent<HealthController>().ReturnSlider();
+        objectPool.ReturnGameObject(GameObjectType.HEALTHBAR_GROUP, player2_healthbar);
         CameraFollow.instance.ReturnCameraPosition();
         this.activeUnit.isAttacking = false;
         sl.UnLoadBattleScene();

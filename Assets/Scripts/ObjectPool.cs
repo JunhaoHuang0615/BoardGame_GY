@@ -8,11 +8,17 @@ public enum GameObjectType
     ATTACKBUTTON,
     STANDBUTTON,
     BUTTONLIST,
+    EQUIPLIST,
+    ATTACK_EQUIPMENT,
+    HEALTHBAR_GROUP,
+    HEALTHBAR_SLIDER,
 }
+
 public class ObjectPool : MonoBehaviour
 {
     public Dictionary<GameObjectType, Queue<GameObject>> gameObjectsPool;
     public Dictionary<BattlePrefabType, Queue<GameObject>> battleObjectsPool;
+    public Dictionary<PlatformType, Queue<GameObject>> platformObjectsPool;
     private ResourcesMananger rm;
 
     private void Awake()
@@ -20,102 +26,142 @@ public class ObjectPool : MonoBehaviour
         rm = FindObjectOfType<ResourcesMananger>();
         gameObjectsPool = new Dictionary<GameObjectType, Queue<GameObject>>();
         battleObjectsPool = new Dictionary<BattlePrefabType, Queue<GameObject>>();
-        Invoke("PreLoad",0.2f); 
+        platformObjectsPool = new Dictionary<PlatformType, Queue<GameObject>>();
+        Invoke("PreLoad", 0.2f);
+    }
+
+    private Transform GetOrCreateParentTransform(string typeName)
+    {
+        Transform parentTransform = transform.Find(typeName);
+        if (parentTransform == null)
+        {
+            GameObject typeParent = new GameObject(typeName);
+            typeParent.transform.SetParent(this.transform,false); //保持本地变换
+            parentTransform = typeParent.transform;
+        }
+        return parentTransform;
     }
 
     private void Copy(GameObjectType gameObjectType)
     {
         if (!gameObjectsPool.ContainsKey(gameObjectType))
         {
-            //创建池子
             gameObjectsPool.Add(gameObjectType, new Queue<GameObject>());
-
         }
         Queue<GameObject> valuePool = gameObjectsPool[gameObjectType];
-        valuePool.Enqueue(Instantiate(rm.prefabDic[gameObjectType]));
-    }
-    private void Copy(BattlePrefabType gameObjectType)
-    {
-        if (!battleObjectsPool.ContainsKey(gameObjectType))
-        {
-            //创建池子
-            battleObjectsPool.Add(gameObjectType, new Queue<GameObject>());
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
 
-        }
-        Queue<GameObject> valuePool = battleObjectsPool[gameObjectType];
-        GameObject tempGameObj = Instantiate(rm.battlePrefabDic[gameObjectType]);
+        GameObject tempGameObj = Instantiate(rm.prefabDic[gameObjectType], parentTransform);
         tempGameObj.SetActive(false);
         valuePool.Enqueue(tempGameObj);
     }
 
-    //外界拿到对象的方法
+    private void Copy(BattlePrefabType gameObjectType)
+    {
+        if (!battleObjectsPool.ContainsKey(gameObjectType))
+        {
+            battleObjectsPool.Add(gameObjectType, new Queue<GameObject>());
+        }
+        Queue<GameObject> valuePool = battleObjectsPool[gameObjectType];
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+
+        GameObject tempGameObj = Instantiate(rm.battlePrefabDic[gameObjectType], parentTransform);
+        tempGameObj.SetActive(false);
+        valuePool.Enqueue(tempGameObj);
+    }
+
+    private void Copy(PlatformType gameObjectType)
+    {
+        if (!platformObjectsPool.ContainsKey(gameObjectType))
+        {
+            platformObjectsPool.Add(gameObjectType, new Queue<GameObject>());
+        }
+        Queue<GameObject> valuePool = platformObjectsPool[gameObjectType];
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+
+        GameObject tempGameObj = Instantiate(rm.platformPrefabDic[gameObjectType], parentTransform);
+        tempGameObj.SetActive(false);
+        valuePool.Enqueue(tempGameObj);
+    }
+
     public GameObject GetGameObject(GameObjectType gameObjectType)
-    {   
-        //确认有这个池子
-        if (gameObjectsPool.ContainsKey(gameObjectType))
-        {   
-            //池子内有对象
-            if (gameObjectsPool[gameObjectType].Count > 0)
-            {
-                GameObject gobj = gameObjectsPool[gameObjectType].Dequeue();
-                gobj.SetActive(true);
-                return gobj;
-            }
-            else
-            {
-                //池子内的对象已经被取完了
-                Copy(gameObjectType);
-                GameObject gobj = gameObjectsPool[gameObjectType].Dequeue();
-                return gobj;
-            }
+    {
+        if (gameObjectsPool.ContainsKey(gameObjectType) && gameObjectsPool[gameObjectType].Count > 0)
+        {
+            GameObject gobj = gameObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
         }
         else
         {
-            print("没有此对象");
-            return null;
+            Copy(gameObjectType);
+            GameObject gobj = gameObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
         }
     }
+
     public GameObject GetGameObject(BattlePrefabType gameObjectType)
     {
-        //确认有这个池子
-        if (battleObjectsPool.ContainsKey(gameObjectType))
+        if (battleObjectsPool.ContainsKey(gameObjectType) && battleObjectsPool[gameObjectType].Count > 0)
         {
-            //池子内有对象
-            if (battleObjectsPool[gameObjectType].Count > 0)
-            {
-                GameObject gobj = battleObjectsPool[gameObjectType].Dequeue();
-                gobj.SetActive(true);
-                return gobj;
-            }
-            else
-            {
-                //池子内的对象已经被取完了
-                Copy(gameObjectType);
-                GameObject gobj = battleObjectsPool[gameObjectType].Dequeue();
-                return gobj;
-            }
+            GameObject gobj = battleObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
         }
         else
         {
-            print("没有此对象");
-            return null;
+            Copy(gameObjectType);
+            GameObject gobj = battleObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
         }
     }
-    //外界归还对象的方法
+
+    public GameObject GetGameObject(PlatformType gameObjectType)
+    {
+        if (platformObjectsPool.ContainsKey(gameObjectType) && platformObjectsPool[gameObjectType].Count > 0)
+        {
+            GameObject gobj = platformObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
+        }
+        else
+        {
+            Copy(gameObjectType);
+            GameObject gobj = platformObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
+        }
+    }
+
     public void ReturnGameObject(GameObjectType gameObjectType, GameObject gobj)
     {
         gobj.SetActive(false);
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+        gobj.transform.SetParent(parentTransform, false);
         gameObjectsPool[gameObjectType].Enqueue(gobj);
     }
+
     public void ReturnGameObject(BattlePrefabType gameObjectType, GameObject gobj)
     {
         gobj.SetActive(false);
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+        gobj.transform.SetParent(parentTransform, false); //false 代表保持本地变换
         battleObjectsPool[gameObjectType].Enqueue(gobj);
+    }
+
+    public void ReturnGameObject(PlatformType gameObjectType, GameObject gobj)
+    {
+        gobj.SetActive(false);
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+        gobj.transform.SetParent(parentTransform,false);
+        platformObjectsPool[gameObjectType].Enqueue(gobj);
     }
 
     public void PreLoad()
     {
-        for(int i = 0; i <5; i++)
+        for (int i = 0; i < 5; i++)
         {
             Copy(GameObjectType.MOVEBUTTON);
             Copy(GameObjectType.ATTACKBUTTON);
@@ -123,6 +169,13 @@ public class ObjectPool : MonoBehaviour
             Copy(GameObjectType.BUTTONLIST);
             Copy(BattlePrefabType.Archer);
             Copy(BattlePrefabType.Solider);
+            Copy(GameObjectType.EQUIPLIST);
+            Copy(GameObjectType.ATTACK_EQUIPMENT);
+            Copy(PlatformType.GRASS);
+            Copy(PlatformType.GRASS_TREE);
+            Copy(PlatformType.STONE_ROAD);
+            Copy(GameObjectType.HEALTHBAR_GROUP);
+            Copy(GameObjectType.HEALTHBAR_SLIDER);
         }
     }
 }

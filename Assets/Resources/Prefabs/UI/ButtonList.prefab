@@ -39,7 +39,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -28.040009, y: 0.13999939}
+  m_AnchoredPosition: {x: -28.04004, y: 0.14001465}
   m_SizeDelta: {x: 6, y: 6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &243836901038799582
@@ -76,12 +76,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentTransform: {fileID: 243836901852633164}
-  moveButton: {fileID: 5183744470145504019, guid: 4480fcfe67ee1734d9ab9c72f588c25d,
-    type: 3}
-  attackButton: {fileID: 3937632508742879235, guid: 69a4ec7797090cf4bb152ccf367db2fc,
-    type: 3}
-  standButton: {fileID: 3266844109926028899, guid: 04e076bc35808384ea56cdb47e0c436c,
-    type: 3}
   eventSystem: {fileID: 0}
   raycaster: {fileID: 0}
   um: {fileID: 0}

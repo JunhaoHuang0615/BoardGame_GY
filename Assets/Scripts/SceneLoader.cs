@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class SceneLoader : MonoBehaviour
 {
@@ -23,10 +24,48 @@ public class SceneLoader : MonoBehaviour
     {
         PlayFadeInAnimation();
         yield return new WaitForSeconds(3f);
-        SceneManager.LoadSceneAsync("BattleScene", LoadSceneMode.Additive);
-        
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("BattleScene", LoadSceneMode.Additive);
+        //SceneManager.LoadSceneAsync("BattleScene", LoadSceneMode.Additive);
+        // 等待加载完成
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+
         PlayFadeOutAnimation();
         
+    }
+
+    public Scene GetSceneByName(string sceneName)
+    {
+        return SceneManager.GetSceneByName(sceneName);
+    }
+
+    public void MoveGameObjectToTargetScene(GameObject go,Scene targetScene)
+    {
+        SceneManager.MoveGameObjectToScene(go, targetScene);
+    }
+    public Canvas FindOrCreateCanvasInScene(Scene targetScene)
+    {
+        // 切换到目标场景进行查找
+        foreach (GameObject rootObject in targetScene.GetRootGameObjects())
+        {
+            Canvas canvas = rootObject.GetComponentInChildren<Canvas>();
+            if (canvas != null)
+            {
+                return canvas;
+            }
+        }
+
+        // 没有找到Canvas，创建一个新的Canvas并设置到目标场景中
+        GameObject newCanvasObj = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        Canvas newCanvas = newCanvasObj.GetComponent<Canvas>();
+        newCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+        // 将新的Canvas添加到目标场景
+        SceneManager.MoveGameObjectToScene(newCanvasObj, targetScene);
+
+        return newCanvas;
     }
 
     //卸载战斗场景

@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using static UnityEngine.UI.CanvasScaler;
 
 public enum CharacterType
 {
@@ -18,10 +19,11 @@ public class Unit : MonoBehaviour
     public bool selected; 
     //角色属性
     public int playerID;  //玩家ID
-    public int health;
+    public int health; //currenthealth
+    public int maxHealth;
     public int moveRange;//移动范围
-    public int moveSpeed; //移动的速度
-    public int attackRange;
+    public int moveSpeed; //动画的移动的速度
+    public int attackRange; //根据装备来确定！
     public int attackAbility;
     public bool isAttackable;
     public int defenseAbility;
@@ -38,19 +40,26 @@ public class Unit : MonoBehaviour
     public Color moveableHightColor;
     public Color attackableHightColor;
     public ButtonList buttonList;
+    public EquipmentList equipList; //武器包
+    public List<string> attackEquipList = new List<string>(); //武器包里的武器
+    public Weapon attackEquipUsedRightNow; //当前单位正在使用的武器,只有单位在真正使用了之后，才会进行切换
+    public Weapon selectEquip; //选择的武器
+    public AttackType attackType; //要根据武器来定
 
     private GameManager gm;
+    private DataManager dataManager;
     private ObjectPool obp;
     private SceneLoader sl;
     public PlayerAnimator playerAnimator;
     public bool canExcute; //判定角色是否可以执行操作
     public bool canAttack;
     public bool isAttacking;
-    public AttackType attackType;
+
 
     public BattlePrefabType battlePreType;
     public GameObject attackPrefab;
     public Animator attackPrefabAnimator;
+    private List<Tile> counterAttackTiles = new List<Tile>();
     // Start is called before the first frame update
     void Awake()
     {
@@ -58,10 +67,33 @@ public class Unit : MonoBehaviour
         obp = FindObjectOfType<ObjectPool>();
         buttonList = gameObject.AddComponent<ButtonList>();
         buttonList.unit = this;
+        equipList = gameObject.AddComponent<EquipmentList>();
+        equipList.unit = this;
         playerAnimator = this.GetComponent<PlayerAnimator>();
         sl = FindObjectOfType<SceneLoader>();
+        
+    }
+    void Start()
+    {
+        Invoke("InitData", 0.2f);
+
     }
 
+    void InitData()
+    {
+        dataManager = FindObjectOfType<DataManager>();
+        if(attackEquipList.Count > 0)
+        {
+            InitWeapon();
+        }
+    }
+    public void InitWeapon()
+    {
+        selectEquip = dataManager.GetWeapon(attackEquipList[0]);
+        this.attackRange = selectEquip.Range;
+        this.attackType = (AttackType)Enum.Parse(typeof(AttackType), selectEquip.AttackType);
+        this.attackAbility = selectEquip.Attack;
+    }
     //这个事件要求gameobject挂载collider
     //object在Z轴方向上的位置
     private void OnMouseDown()
@@ -90,6 +122,7 @@ public class Unit : MonoBehaviour
         gm.ResetMovePath();
         EnableGoodCollider(true);
         gm.EnablePlayerCollider(true);
+        CloseAttackEquipList();
         CloseButtonList();
 
         //取消选择
@@ -104,6 +137,7 @@ public class Unit : MonoBehaviour
         {
            
             gm.selectedUnit.CloseButtonList();
+            gm.selectedUnit.CloseAttackEquipList();
             gm.selectedUnit.selected = false;
             gm.selectedUnit.playerAnimator.SetAnimationParam(gm.selectedUnit, 0, 0);
             selected = true;
@@ -114,7 +148,7 @@ public class Unit : MonoBehaviour
             ShowMoveRangeTwo();
             else if (!hasAttacked)
             {
-                ShowAttackRange(gm.selectedUnit.standOnTile);
+                ShowAttackRange(gm.selectedUnit.standOnTile,true);
             }
 
         }
@@ -128,7 +162,7 @@ public class Unit : MonoBehaviour
                 ShowMoveRangeTwo();
             else if (!hasAttacked)
             {
-                ShowAttackRange(gm.selectedUnit.standOnTile);
+                ShowAttackRange(gm.selectedUnit.standOnTile,true);
             }
         }
         playerAnimator.SetAnimationParam(this,0,0);
@@ -156,8 +190,160 @@ public class Unit : MonoBehaviour
 
     }
     //attackTile 发起攻击的格子
-    public void ShowAttackRange(Tile attackTIle)
+    //needSaveAttackTiles: 确认发动了攻击，才会进行存储
+    public void ShowAttackRange(Tile attackTIle,bool needSaveAttackTiles = false)
     {   
+        gm.attackRangeTiles.Clear();
+        //洪水攻击类型
+        switch (this.selectEquip.Range_Pattern)
+        {
+            case "Mele": //近战
+                FloodAttackRange(attackTIle);
+                break;
+            case "Ten":
+                CrossAttackRange(attackTIle, selectEquip.Range, selectEquip.Range);
+                break;
+            case "Hoseki":
+                FloodAttackRangeWithUnattackableRange(attackTIle, 1, selectEquip.Range);
+                break;
+            default:
+                FloodAttackRangeWithUnattackableRange(attackTIle, 1, selectEquip.Range);
+                break;
+
+        }
+        // FloodAttackRange(attackTIle);
+        //弓箭手 内圈格子（不允许攻击的范围（0~1范围无法攻击），外圈格子允许攻击的范围（1~2可以攻击））
+        // FloodAttackRangeWithUnattackableRange(attackTIle,2,4);
+        //十字型攻击方式
+        
+        if (needSaveAttackTiles) {
+            this.counterAttackTiles.Clear();
+            //不可以直接等于gm.attackRangeTiles，否则gm.attackRangeTiles一旦发生变化，counterAttackTiles也会跟着发生变化
+            foreach (var tiles in gm.attackRangeTiles)
+            {
+                this.counterAttackTiles.Add(tiles);
+            }
+
+        }
+
+
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="attackTIle">攻击的发起格子</param>
+    /// <param name="across">横向range</param>
+    /// <param name="vertical">纵向Range</param>
+    /// <param name="blockable">是否会被地形（墙）阻挡，即如果Tile的属性tiletype为wall的话，则无法继续延伸，但是可以将wall视为攻击目标，因此wall的那一个tile也是可以被攻击到的</param>
+    public void CrossAttackRange(Tile attackTIle, int across, int vertical,bool blockable = true)
+    {
+        List<Tile> close = new List<Tile>(); // 用于记录已处理过的格子
+
+        // 使用Vector的预定义方向：上、下、左、右
+        Vector2[] directions = new Vector2[]
+        {
+        Vector2.up,    // 上
+        Vector2.down,  // 下
+        Vector2.right, // 右
+        Vector2.left   // 左
+        };
+
+        // 分别处理横向和纵向
+        for (int dirIndex = 0; dirIndex < directions.Length; dirIndex++)
+        {
+            Vector2 direction = directions[dirIndex];
+            int range = (direction.x == 0) ? vertical : across;  // 判断是横向还是纵向
+
+            Tile currentTile = attackTIle;
+            for (int i = 1; i <= range; i++)
+            {
+                // 找到当前方向上i步的Tile
+                Tile nextTile = currentTile.GetNeighbourInDirection(direction);
+                // 如果没有下一个格子，或者超出了地图边界，停止检测
+                if (nextTile == null)
+                {
+                    break;
+                }
+
+                // 如果是可移动的格子，跳过（也就是说只在可以移动的格子上显示攻击范围）
+                if (nextTile.isMoveableTile)
+                {
+                    continue;
+                }
+
+                // 如果被墙阻挡（根据tileType判断），且blockable为true，则停止检测
+                if (blockable && nextTile.tileType == TileType.Wall)
+                {
+                    break;
+                }
+
+                // 标记为可攻击格子
+                nextTile.HightAttackableTile();
+                if (nextTile.unitOnTile != null)
+                    nextTile.unitOnTile.HightAttackUnitSprite();
+
+                // 将格子加入全局攻击范围
+                if (!gm.attackRangeTiles.Contains(nextTile))
+                    gm.attackRangeTiles.Add(nextTile);
+
+                // 更新当前处理的格子
+                currentTile = nextTile;
+
+                // 记录已经处理过的Tile
+                close.Add(nextTile);
+            }
+        }
+    }
+    public void FloodAttackRangeWithUnattackableRange(Tile attackTIle,int inside, int outside)
+    {
+        List<Tile> now = new List<Tile>();
+        List<Tile> open = new List<Tile>();
+        List<Tile> close = new List<Tile>();
+
+        now.Add(attackTIle);
+        for (int i = 0; i < outside; i++)
+        {
+            foreach (var current in now)
+            {
+                close.Add(current);
+                List<Tile> currentTileNeighbors = current.neighbors;
+                foreach (var neighbor in currentTileNeighbors)
+                {
+                    if (close.Contains(neighbor) || open.Contains(neighbor))
+                    {
+                        continue;
+                    }
+                    open.Add(neighbor);
+                    // 如果格子不可移动，加入open
+                    if (!neighbor.isMoveableTile)
+                    {
+                        // 判断当前格子是否在inside到outside之间
+                        if (i >= inside)
+                        {   
+                            // 只标记inside到outside的格子为可攻击
+                            neighbor.HightAttackableTile();
+                            if (neighbor.unitOnTile != null)
+                                neighbor.unitOnTile.HightAttackUnitSprite();
+                            // 将格子加入全局攻击范围
+                            if (!gm.attackRangeTiles.Contains(neighbor))
+                                gm.attackRangeTiles.Add(neighbor);
+                        }
+
+                    }
+                }
+            }
+
+            now.Clear();
+            foreach (var tile in open)
+            {
+                now.Add(tile);
+            }
+            open.Clear();
+        }
+
+    }
+    public void FloodAttackRange(Tile attackTIle)
+    {
         //now : 存放的是当前正在进行检测的Tile
         //close: 已经被检测的Tile
         //Open: 一次检测中，成功流水的Tile，目的是为了下一次的检测
@@ -167,7 +353,7 @@ public class Unit : MonoBehaviour
 
         //第一次检测的时候，玩家起点即是第一次的检测点
         now.Add(attackTIle);
-        for(int i = 0; i< attackRange; i++)
+        for (int i = 0; i < attackRange; i++)
         {
             //判断监测点四个方向是否可以有水通过
             foreach (var current in now)
@@ -199,7 +385,7 @@ public class Unit : MonoBehaviour
                             if (neighbor.unitOnTile != null)
                                 neighbor.unitOnTile.HightAttackUnitSprite();
                         }
-                        if(!gm.attackRangeTiles.Contains(neighbor))
+                        if (!gm.attackRangeTiles.Contains(neighbor))
                             gm.attackRangeTiles.Add(neighbor);
                     }
                 }
@@ -315,7 +501,10 @@ public class Unit : MonoBehaviour
                     tile.unitOnTile.HightUnitSprite();
                 //加入到可移动的List中
                 if (!gm.moveableTiles.Contains(tile))
+                {
                     gm.moveableTiles.Add(tile);
+                }
+                    
             }
         }
     }
@@ -362,16 +551,18 @@ public class Unit : MonoBehaviour
             gm.attackRangeTiles.Clear();
         }
         foreach(var moveTile in moveRangeList)
-        {
-            List<Tile> neighbors = moveTile.neighbors;
-            foreach (var neighbor in neighbors)
+        {   
+            ShowAttackRange(moveTile);
+            //List<Tile> neighbors = moveTile.neighbors;
+/*            foreach (var neighbor in neighbors)
             {
-                if(neighbor.isMoveableTile == false)
+                if (neighbor.isMoveableTile == false)
                 {
+
                     //说明此MoveTile的邻边存在不可移动的格子，是一个边缘格子
-                    ShowAttackRange(moveTile); //传入的是边缘的格子
+                    ShowAttackRange(moveTile); //传入的是移动范围最边缘的格子
                 }
-            }
+            }*/
         }
     }
     public void Move(List<Tile> path)
@@ -410,7 +601,7 @@ public class Unit : MonoBehaviour
         this.hasMoved = true;
         OpenButtonList();
         previousStandTile.UnitOnTile();
-        ShowAttackRange(this.standOnTile);
+        ShowAttackRange(this.standOnTile,true);
         Action moveAction = new Action(ResetUnitPosition);
         gm.actions.Push(moveAction);
         gm.isAnimating = false;
@@ -428,6 +619,10 @@ public class Unit : MonoBehaviour
     public void CloseButtonList()
     {
         buttonList.CloseButtons();
+    }
+    public void CloseAttackEquipList()
+    {
+        equipList.CloseButtons();
     }
 
     public void DesideButton()
@@ -524,6 +719,55 @@ public class Unit : MonoBehaviour
         this.hasAttacked = false;
         this.selected = false;
         this.stand = false;
+    }
+
+    public void ChangeWeapon(Weapon weapon)
+    {
+        this.attackRange = weapon.Range;
+        this.attackAbility = weapon.Attack;
+        this.attackType = (AttackType)Enum.Parse(typeof(AttackType), weapon.AttackType);
+    }
+
+    public bool CanCounterAttack(Unit attckUnit)
+    {
+        if (counterAttackTiles.Count > 0) {
+            foreach (var tile in counterAttackTiles)
+            {
+                if(tile.unitOnTile != null && tile.unitOnTile == attckUnit)
+                {   
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            //要重新执行一次ShowAttackRange,适用于第一回合，AI没有发动攻击的时候
+            ShowAttackRange(this.standOnTile, true);
+            foreach (var tile in counterAttackTiles)
+            {
+                if (tile.unitOnTile != null && tile.unitOnTile == attckUnit)
+                {
+                    gm.ResetMoveableRange();
+                    gm.ResetMovePath();
+                    return true;
+                }
+            }
+            gm.ResetMoveableRange();
+            gm.ResetMovePath();
+
+        }
+
+        return false;
+    }
+
+    public int CalculateDamage(Unit targetUnit)
+    {
+        //需要考虑的情况：防御力高于攻击力
+        int damage = Mathf.Max(this.attackAbility - targetUnit.defenseAbility, 0);
+
+        targetUnit.health -= damage;
+        
+        return damage; //用于动画显示
     }
 
 }

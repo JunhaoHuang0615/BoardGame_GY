@@ -7,7 +7,7 @@ using System;
 public class GameManager : MonoBehaviour
 {   
     public static GameManager Instance { get; private set; }
-
+ 
     public Unit selectedUnit;
     public List<Unit> allUnits;
     public List<Tile> tiles;
@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
     //战斗系统相关
     public Unit activeUnit;
     public Unit passiveUnit;
+    public bool passiveUnitCanCounterAttack; //决定了是否能够反击
 
     //AI相关
     public Unit aiTarget;
@@ -188,5 +189,22 @@ public class GameManager : MonoBehaviour
         {
             tile.RestHightMovableTile();
         }
+    }
+
+    public bool CheckUnitAdjacent(Unit active, Unit passive)
+    {
+        //检测主动攻击的Unit下的Tile的neibours是否包含passive的tile
+        //包含则相邻
+        Tile active_tile = active.standOnTile;
+        foreach (var tile in active_tile.neighbors)
+        {
+            if(tile == passive.standOnTile)
+            {
+                return true;
+            }
+        }
+        return false;
+        //不包含则远程
+
     }
 }

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Mountain
   - Tile
+  - AttackPrefab
   layers:
   - Default
   - TransparentFX
