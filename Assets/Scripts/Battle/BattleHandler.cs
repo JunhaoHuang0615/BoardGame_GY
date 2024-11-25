@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,6 +18,7 @@ public class BattleHandler : MonoBehaviour
     private GameObject platform_player2;
     public GameObject player1_healthbar;
     public GameObject player2_healthbar;
+    public Unit deadUnit;
     // Start is called before the first frame update
     void Start()
     {
@@ -41,12 +43,15 @@ public class BattleHandler : MonoBehaviour
     }
     public IEnumerator StartBattle(Unit activeUnit, Unit passiveUnit)
     {
+        deadUnit = null;
         this.activeUnit = activeUnit;
         this.passiveUnit = passiveUnit;
         this.activeUnit.isAttacking = true;
         //生成攻击时所有的Prefab
         activeUnit.attackPrefab = objectPool.GetGameObject(activeUnit.battlePreType);
         passiveUnit.attackPrefab = objectPool.GetGameObject(passiveUnit.battlePreType);
+        this.activeUnit.attackPrefab.GetComponentInChildren<Animator>().SetBool("Dead",false);
+        this.passiveUnit.attackPrefab.GetComponentInChildren<Animator>().SetBool("Dead", false);
         activeUnit.attackPrefab.GetComponentInChildren<BattleEventHandlder>().SetBattleHandler(this);
         passiveUnit.attackPrefab.GetComponentInChildren<BattleEventHandlder>().SetBattleHandler(this);
 
@@ -199,6 +204,10 @@ public class BattleHandler : MonoBehaviour
             if(activePlayerTurns > 0)
             {
                 yield return AttackTurn(activeUnit, passiveUnit);
+                if (IsUnitDead(passiveUnit))
+                {
+                    break;
+                }
                 activePlayerTurns--;
             }
             if(passivePlayerTurns > 0)
@@ -206,10 +215,18 @@ public class BattleHandler : MonoBehaviour
                 if (gm.passiveUnitCanCounterAttack)
                 {
                     yield return AttackTurn(passiveUnit,activeUnit);
+                    if (IsUnitDead(activeUnit))
+                    {
+                        break;
+                    }
                     passivePlayerTurns--;
                 }
                 else
                 {
+                    if (IsUnitDead(activeUnit))
+                    {
+                        break;
+                    }
                     passivePlayerTurns--;
                 }
             }
@@ -224,7 +241,16 @@ public class BattleHandler : MonoBehaviour
         objectPool.ReturnGameObject(GameObjectType.HEALTHBAR_GROUP, player2_healthbar);
         CameraFollow.instance.ReturnCameraPosition();
         this.activeUnit.isAttacking = false;
-        sl.UnLoadBattleScene();
+        Action action = () => { 
+            if(deadUnit != null)
+            {
+                //说明要执行死亡动画
+                gm.StartCoroutine( deadUnit.Dead());
+            }
+        
+        
+        };
+        sl.UnLoadBattleScene(action);
         
 
     }
@@ -239,6 +265,20 @@ public class BattleHandler : MonoBehaviour
         {
             yield return attackUnit.Attack(beAttackedUnit);
             attackCount--;
+        }
+    }
+
+    public bool IsUnitDead(Unit unit)
+    {
+        if (unit.health <= 0 ){
+            deadUnit = unit;
+            gm.animationWaitting = true;
+            return true;
+        }
+        else { 
+        
+            return false;
+        
         }
     }
 }

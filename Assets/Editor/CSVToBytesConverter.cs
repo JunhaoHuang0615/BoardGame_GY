@@ -5,29 +5,54 @@ using UnityEngine;
 
 public class CSVToBytesConverter
 {
-    // 菜单工具，用于在 Unity 编辑器中触发
-    [MenuItem("Tools/Convert and Secure CSV to Bytes")]
-    static void ConvertCSVToCompressedEncryptedBytes()
+    // 菜单工具，支持处理多个 CSV 文件
+    [MenuItem("Tools/Convert and Secure CSV Files to Bytes")]
+    static void ConvertCSVFilesToCompressedEncryptedBytes()
     {
-        string csvPath = "Assets/Resources/CSVTable/WeaponsData.csv"; // CSV 文件路径
-        string bytesPath = "Assets/Resources/TableBytes/WeaponsData.bytes";// 输出的 .bytes 文件路径
+        // 定义所有 CSV 文件及其对应的 .bytes 文件路径
+        string[] csvFiles = {
+            "Assets/Resources/CSVTable/WeaponsData.csv",
+            "Assets/Resources/CSVTable/EnemyChracter.csv",
+            "Assets/Resources/CSVTable/PlayerChracter.csv"
+        };
 
-        // 读取 CSV 文件
-        byte[] csvData = File.ReadAllBytes(csvPath);
+        string[] bytesFiles = {
+            "Assets/Resources/TableBytes/WeaponsData.bytes",
+            "Assets/Resources/TableBytes/EnemyChracter.bytes",
+            "Assets/Resources/TableBytes/PlayerChracter.bytes"
+        };
 
-        // 压缩 CSV 数据
-        byte[] compressedData = CompressData(csvData);
+        // 遍历所有文件并处理
+        for (int i = 0; i < csvFiles.Length; i++)
+        {
+            string csvPath = csvFiles[i];
+            string bytesPath = bytesFiles[i];
 
-        // 加密数据
-        byte[] encryptedData = EncryptData(compressedData);
+            try
+            {
+                // 读取 CSV 数据
+                byte[] csvData = File.ReadAllBytes(csvPath);
 
-        // 写入加密压缩后的 Bytes 文件
-        File.WriteAllBytes(bytesPath, encryptedData);
+                // 压缩数据
+                byte[] compressedData = CompressData(csvData);
 
-        // 刷新 Unity 资源数据库，确保资源被识别
+                // 加密数据
+                byte[] encryptedData = EncryptData(compressedData);
+
+                // 输出为 .bytes 文件
+                File.WriteAllBytes(bytesPath, encryptedData);
+
+                Debug.Log($"成功处理: {csvPath} -> {bytesPath}");
+            }
+            catch (IOException ex)
+            {
+                Debug.LogError($"文件处理失败: {csvPath}. 错误: {ex.Message}");
+            }
+        }
+
+        // 刷新 Unity 资源数据库
         AssetDatabase.Refresh();
-
-        Debug.Log("CSV 压缩、加密并转换为 .bytes 完成。");
+        Debug.Log("所有 CSV 文件已成功压缩、加密并转换为 .bytes 文件。");
     }
 
     // 使用 Gzip 进行压缩
@@ -43,13 +68,13 @@ public class CSVToBytesConverter
         }
     }
 
-    // 使用 XOR 加密（简单加密算法）
+    // 使用 XOR 加密
     static byte[] EncryptData(byte[] data)
     {
-        byte key = 0xAA; // 加密密钥，可以自定义
+        byte key = 0xAA; // 加密密钥，可以更改
         for (int i = 0; i < data.Length; i++)
         {
-            data[i] ^= key; // XOR 操作
+            data[i] ^= key; // 执行 XOR 操作
         }
         return data;
     }

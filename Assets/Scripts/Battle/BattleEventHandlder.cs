@@ -13,9 +13,18 @@ public class BattleEventHandlder : MonoBehaviour
     List<BattleAttackActiveComp> objectsWithBattleAttackActiveComp = new List<BattleAttackActiveComp>();
     public Vector3 attackUnitOriPosition;
     public BattleHandler battleHandldler;
+    private List<SpriteRendererState> spriteStates = new List<SpriteRendererState>();
+    // 存储每个SpriteRenderer的初始颜色
+    private struct SpriteRendererState
+    {
+        public SpriteRenderer renderer;
+        public Color initialColor;
+    }
     //public Dictionary<AttackType, AttackPathProfile> attackPathDict;
     //public GameObject pathgroup;
 
+
+    
     private void Awake()
     {
         /*        attackPathDict = new Dictionary<AttackType, AttackPathProfile>();
@@ -27,6 +36,19 @@ public class BattleEventHandlder : MonoBehaviour
                         attackPathDict.Add(pathData.attackType, pathData);
                     }
                 }*/
+        // 获取所有子对象的SpriteRenderer并保存其初始值
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+
+        foreach (var renderer in renderers)
+        {
+            // 保存初始值的拷贝
+            SpriteRendererState state = new SpriteRendererState
+            {
+                renderer = renderer,
+                initialColor = new Color(renderer.color.r, renderer.color.g, renderer.color.b, renderer.color.a)
+            };
+            spriteStates.Add(state);
+        }
     }
 
     public IEnumerator AttackMovement()
@@ -273,10 +295,26 @@ public class BattleEventHandlder : MonoBehaviour
             if(this.beattacked.playerID == 1)
             {
                 yield return battleHandldler.player1_healthbar.GetComponent<HealthController>().DamageTaken_Smooth(attackUnit.CalculateDamage(beattacked));
+
             }
             else
             {
                 yield return battleHandldler.player2_healthbar.GetComponent<HealthController>().DamageTaken_Smooth(attackUnit.CalculateDamage(beattacked));
+            }
+            if(this.beattacked.health <= 0)
+            //检测是否需要播放死亡动画
+            {
+                beattacked.attackPrefab.GetComponentInChildren<Animator>().SetBool("Dead",true);
+                while (!beattacked.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+                {
+                    yield return null;
+                }
+                //判断当前动画是否已经完成
+                while (beattacked.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+                {
+                    yield return null; //卡在动画播放
+                }
+
             }
         }
 
@@ -284,5 +322,16 @@ public class BattleEventHandlder : MonoBehaviour
     public void SetBattleHandler(BattleHandler battleHandler)
     {
         this.battleHandldler = battleHandler;
+    }
+    private void OnDisable()
+    {
+        foreach (var state in spriteStates)
+        {
+            if (state.renderer != null)
+            {
+                // 重置为初始颜色
+                state.renderer.color = state.initialColor;
+            }
+        }
     }
 }

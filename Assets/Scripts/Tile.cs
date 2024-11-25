@@ -22,7 +22,9 @@ public class Tile : MonoBehaviour
 
     public LayerMask layerMask;
     private GameManager gm;
+    private ObjectPool obp;
     private UIManager um;
+    private DataManager dataManager;
     public int tileHeight; //格子的海拔高度，低于次高度的单位不可移动到此格子上
     public Unit unitOnTile;
     public bool isMoveableTile; //可被移动的格子，鼠标点击时用
@@ -57,6 +59,8 @@ public class Tile : MonoBehaviour
         gm = FindObjectOfType<GameManager>();
         pm = FindObjectOfType<PathFinding>();
         um = FindObjectOfType<UIManager>();
+        obp = FindObjectOfType<ObjectPool>();
+        dataManager = FindObjectOfType<DataManager>();
         tileDataManager = FindObjectOfType<TileDataManager>();
         render = GetComponent<SpriteRenderer>();
         int r = Random.Range(0, tileDataManager.tileSprites.Count);
@@ -69,6 +73,22 @@ public class Tile : MonoBehaviour
     }
     private void OnMouseDown()
     {
+        if ((gm.isPrepareing))
+        {
+            Vector3 tilePosition = transform.position;
+            //TODO: 应该放置的棋子，由用户通过UI选择后决定
+            GameObject pawn = obp.GetGameObject(PawnType.Saber);
+            pawn.transform.position = new Vector3 (tilePosition.x, tilePosition.y,-1);
+            //TODO: 应该放置的棋子的Data名字，由用户过UI选择后决定
+            Unit placedUnit = pawn.GetComponent<Unit>();
+            placedUnit.InitializeUnit(dataManager.GetChracterData("武士", CSVResource.PlayerChracter),1);
+            this.unitOnTile = placedUnit;
+            placedUnit.standOnTile = this;
+            return;
+        }
+        {
+            
+        }
         if (gm.isAnimating == true)
         {
             return;
@@ -82,6 +102,7 @@ public class Tile : MonoBehaviour
         {
             SendUnitHere(gm.selectedUnit,pm.path);
         }
+
     }
 
     private void OnMouseEnter() 

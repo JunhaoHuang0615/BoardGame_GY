@@ -1,6 +1,8 @@
 ﻿
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -69,9 +71,42 @@ public class SceneLoader : MonoBehaviour
     }
 
     //卸载战斗场景
-    public void UnLoadBattleScene()
+    public Task UnLoadBattleSceneAsync()
     {
-        SceneManager.UnloadSceneAsync(SceneManager.GetSceneByName("BattleScene"),UnloadSceneOptions.UnloadAllEmbeddedSceneObjects);
+        var tcs = new TaskCompletionSource<bool>();
+        var asyncOp = SceneManager.UnloadSceneAsync(SceneManager.GetSceneByName("BattleScene"), UnloadSceneOptions.UnloadAllEmbeddedSceneObjects);
+
+        if (asyncOp != null)
+        {
+            asyncOp.completed += (operation) =>
+            {
+                Debug.Log("BattleScene has been unloaded.");
+                tcs.SetResult(true);
+            };
+        }
+        else
+        {
+            Debug.LogError("Failed to unload the BattleScene.");
+            tcs.SetResult(false);
+        }
+        //可以根据 var task = UnLoadBattleSceneAsync();  task.IsCompleted
+        return tcs.Task;
+    }
+    public void UnLoadBattleScene(Action onComplete = null)
+    {
+        var asyncOp = SceneManager.UnloadSceneAsync(SceneManager.GetSceneByName("BattleScene"), UnloadSceneOptions.UnloadAllEmbeddedSceneObjects);
+        if (asyncOp != null)
+        {
+            asyncOp.completed += (operation) =>
+            {
+                Debug.Log("BattleScene has been unloaded.");
+                onComplete?.Invoke();
+            };
+        }
+        else
+        {
+            Debug.LogError("Failed to unload the BattleScene. Ensure the scene name is correct and the scene is loaded.");
+        }
     }
 
     //激活场景

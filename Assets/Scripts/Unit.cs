@@ -28,11 +28,13 @@ public class Unit : MonoBehaviour
     public bool isAttackable;
     public int defenseAbility;
     public CharacterType type;
+    public PawnType pawnType;
     public int flyHeight; //用于判定是否可以行走到某个格子
     //角色状态
     public bool hasMoved;
     public bool hasAttacked;
     public bool stand;
+    public bool isDead;
 
     //单位站在哪一个格子上
     public Tile standOnTile;
@@ -769,5 +771,35 @@ public class Unit : MonoBehaviour
         
         return damage; //用于动画显示
     }
+
+    public void Reborn()
+    {
+        this.playerAnimator.SetAnmationTrigger("Reborn");
+    }
+
+    public IEnumerator Dead()
+    {
+        this.playerAnimator.SetAnimationBool("IsDead",true);
+        this.playerAnimator.SetAnmationTrigger("Dead");
+        yield return gm.WaitAnimation(this.playerAnimator.animator,"Dead");
+        //this.gm.ReturnUnitOnMap(this);
+        this.standOnTile.unitOnTile = null;
+        this.isDead = true;
+        gm.deadList.Add(this);
+        obp.ReturnGameObject(pawnType,this.gameObject);
+    }
+
+    public void InitializeUnit(UnitData data, int playerid)
+    {
+        this.playerID = playerid;
+        this.maxHealth = data.MaxHealth;
+        this.defenseAbility = data.Defense;
+        this.moveRange = data.MoveRange;
+        this.moveSpeed = data.MoveSpeed;
+        this.type = data.Type;
+        this.pawnType = data.PawnType;
+        this.flyHeight = data.FlyHeight;
+    }
+
 
 }

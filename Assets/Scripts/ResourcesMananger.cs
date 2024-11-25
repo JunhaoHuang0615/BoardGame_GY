@@ -7,6 +7,8 @@ using UnityEngine;
 public enum CSVResource
 {
     Weapon,
+    PlayerChracter,
+    EnemyChracter,
 }
 public class ResourcesMananger : MonoBehaviour
 {
@@ -14,6 +16,7 @@ public class ResourcesMananger : MonoBehaviour
     public Dictionary<GameObjectType, GameObject> prefabDic;
     public Dictionary<BattlePrefabType, GameObject> battlePrefabDic;
     public Dictionary<PlatformType, GameObject> platformPrefabDic;
+    public Dictionary<PawnType, GameObject> pawnPrefabDic;
     // 画像のキャッシュを保持する辞書
     private Dictionary<string, Sprite> imageCache = new Dictionary<string, Sprite>();
 
@@ -41,32 +44,11 @@ public class ResourcesMananger : MonoBehaviour
         platformPrefabDic.Add(PlatformType.GRASS_TREE, (GameObject)Resources.Load("Prefabs/UI/Platforms/Arena-Melee 2"));
         platformPrefabDic.Add(PlatformType.GRASS, (GameObject)Resources.Load("Prefabs/UI/Platforms/Arena-Melee"));
 
+        pawnPrefabDic = new Dictionary<PawnType, GameObject>();
+        pawnPrefabDic.Add(PawnType.Saber, (GameObject)Resources.Load("Prefabs/Player/player"));
+
         //加载CSVbytes:
 
-    }
-    // 解密数据（使用相同的 XOR 加密算法）
-    static byte[] DecryptData(byte[] data)
-    {
-        byte key = 0xAA; // 与加密时相同的密钥
-        for (int i = 0; i < data.Length; i++)
-        {
-            data[i] ^= key; // XOR 操作
-        }
-        return data;
-    }
-
-    // 使用 Gzip 解压
-    static byte[] DecompressData(byte[] data)
-    {
-        using (MemoryStream inputStream = new MemoryStream(data))
-        using (MemoryStream outputStream = new MemoryStream())
-        {
-            using (GZipStream gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
-            {
-                gzipStream.CopyTo(outputStream);
-            }
-            return outputStream.ToArray();
-        }
     }
 
     //如果字典里面已经存在了CSV-bytes的资源，那就直接返回字典的内容，如果没有，则需要Load进来

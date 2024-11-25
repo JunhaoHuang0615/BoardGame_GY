@@ -99,6 +99,7 @@ public class AttackEquipment : EquipFunction
         this.unit.playerAnimator.SetAnimationParam(this.unit, 0, -1);
         this.parent_button.OnButtonClick();
         this.unit.canExcute = false;
+        this.unit.canAttack = false;
     }
 
 }

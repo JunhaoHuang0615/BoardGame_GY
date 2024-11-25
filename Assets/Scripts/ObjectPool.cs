@@ -14,11 +14,18 @@ public enum GameObjectType
     HEALTHBAR_SLIDER,
 }
 
+public enum PawnType
+{
+    Archer,
+    Saber,
+}
+
 public class ObjectPool : MonoBehaviour
 {
     public Dictionary<GameObjectType, Queue<GameObject>> gameObjectsPool;
     public Dictionary<BattlePrefabType, Queue<GameObject>> battleObjectsPool;
     public Dictionary<PlatformType, Queue<GameObject>> platformObjectsPool;
+    public Dictionary<PawnType, Queue<GameObject>> PawnObjectsPool;
     private ResourcesMananger rm;
 
     private void Awake()
@@ -27,6 +34,7 @@ public class ObjectPool : MonoBehaviour
         gameObjectsPool = new Dictionary<GameObjectType, Queue<GameObject>>();
         battleObjectsPool = new Dictionary<BattlePrefabType, Queue<GameObject>>();
         platformObjectsPool = new Dictionary<PlatformType, Queue<GameObject>>();
+        PawnObjectsPool = new Dictionary<PawnType, Queue<GameObject>>();
         Invoke("PreLoad", 0.2f);
     }
 
@@ -52,6 +60,20 @@ public class ObjectPool : MonoBehaviour
         Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
 
         GameObject tempGameObj = Instantiate(rm.prefabDic[gameObjectType], parentTransform);
+        tempGameObj.SetActive(false);
+        valuePool.Enqueue(tempGameObj);
+    }
+
+    private void Copy(PawnType pawnObjectType)
+    {
+        if (!PawnObjectsPool.ContainsKey(pawnObjectType))
+        {
+            PawnObjectsPool.Add(pawnObjectType, new Queue<GameObject>());
+        }
+        Queue<GameObject> valuePool = PawnObjectsPool[pawnObjectType];
+        Transform parentTransform = GetOrCreateParentTransform(pawnObjectType.ToString());
+
+        GameObject tempGameObj = Instantiate(rm.pawnPrefabDic[pawnObjectType], parentTransform);
         tempGameObj.SetActive(false);
         valuePool.Enqueue(tempGameObj);
     }
@@ -96,6 +118,23 @@ public class ObjectPool : MonoBehaviour
         {
             Copy(gameObjectType);
             GameObject gobj = gameObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
+        }
+    }
+
+    public GameObject GetGameObject(PawnType gameObjectType)
+    {
+        if (PawnObjectsPool.ContainsKey(gameObjectType) && PawnObjectsPool[gameObjectType].Count > 0)
+        {
+            GameObject gobj = PawnObjectsPool[gameObjectType].Dequeue();
+            gobj.SetActive(true);
+            return gobj;
+        }
+        else
+        {
+            Copy(gameObjectType);
+            GameObject gobj = PawnObjectsPool[gameObjectType].Dequeue();
             gobj.SetActive(true);
             return gobj;
         }
@@ -159,6 +198,14 @@ public class ObjectPool : MonoBehaviour
         platformObjectsPool[gameObjectType].Enqueue(gobj);
     }
 
+    public void ReturnGameObject(PawnType gameObjectType, GameObject gobj)
+    {
+        gobj.SetActive(false);
+        Transform parentTransform = GetOrCreateParentTransform(gameObjectType.ToString());
+        gobj.transform.SetParent(parentTransform, false);
+        PawnObjectsPool[gameObjectType].Enqueue(gobj);
+    }
+
     public void PreLoad()
     {
         for (int i = 0; i < 5; i++)
@@ -176,6 +223,9 @@ public class ObjectPool : MonoBehaviour
             Copy(PlatformType.STONE_ROAD);
             Copy(GameObjectType.HEALTHBAR_GROUP);
             Copy(GameObjectType.HEALTHBAR_SLIDER);
+            Copy(PawnType.Saber);
+            //Copy(PawnType.Archer);
+
         }
     }
 }
