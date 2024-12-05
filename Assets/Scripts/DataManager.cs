@@ -6,6 +6,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Linq;
 
 public class DataManager : MonoBehaviour
 {   
@@ -105,6 +106,9 @@ public class DataManager : MonoBehaviour
                         int moveSpeed = int.Parse(fields[7]);
                         PawnType pawntype = (PawnType)Enum.Parse(typeof(PawnType), fields[8], true);
 
+                        string weaponField = fields[9];
+                        List<string> weapons = weaponField.Split('|').ToList();
+
                         UnitData unit = new UnitData()
                         {
                             ID = id,
@@ -115,7 +119,8 @@ public class DataManager : MonoBehaviour
                             Defense = defense,
                             MoveRange = moveRange,
                             MoveSpeed = moveSpeed,
-                            PawnType = pawntype
+                            PawnType = pawntype,
+                            Weapons = weapons
                         };
                         if(playerOrEnenmy == CSVResource.PlayerChracter)
                         {

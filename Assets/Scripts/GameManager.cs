@@ -3,17 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEditor;
 
 public class GameManager : MonoBehaviour
 {   
     public static GameManager Instance { get; private set; }
- 
+
+    public string level_name;
+
     public Unit selectedUnit;
     public List<Unit> allUnits;
     public List<Tile> tiles;
     public List<Tile> moveableTiles; //存储可移动的Tile
     public List<Tile> attackRangeTiles; //存储处于可攻击范围的格子
-    public List<Unit> playerUnits;
+    public List<Unit> playerUnits; //AI Unit + 玩家Unit
     public List<Unit> deadList;
     public bool isAnimating; //动画进行中
 
@@ -37,6 +40,8 @@ public class GameManager : MonoBehaviour
 
     public bool animationWaitting;
     public bool isPrepareing; //是否处于战斗准备阶段
+    private ObjectPool obp;
+    private DataManager dataManager;
 
     //AI相关
     public Unit aiTarget;
@@ -46,36 +51,69 @@ public class GameManager : MonoBehaviour
     }
     private void Start()
     {
+        obp = FindObjectOfType<ObjectPool>();
+        dataManager = FindObjectOfType<DataManager>();
         isAnimating = false;
         actions = new Stack<Action>();
         tiles = new List<Tile>();
         attackRangeTiles = new List<Tile>();
         deadList = new List<Unit>();
         allUnits = new List<Unit>();
+        playerUnits = new List<Unit>();
         PrePareGame();
         //GameStart();
 
     }
     //取消选择的时候执行
     public void PrePareGame()
-    {
+    {   
+
         allUnits.Clear();
         isPrepareing = true;
         Tile[] tempTiles = FindObjectsOfType<Tile>();
+        foreach (var tile in tempTiles)
+        {
+            tiles.Add(tile);
+        }
+        LoadLevelData();
         Unit[] tempUnits = FindObjectsOfType<Unit>();
         foreach (var unit in tempUnits)
         {
             allUnits.Add(unit);
         }
-        foreach (var tile in tempTiles)
-        {
-            tiles.Add(tile);
-        }
         GetEdgeTile();
     }
 
+    public void LoadLevelData()
+    {
+        //LevelData levelData = AssetDatabase.LoadAssetAtPath<LevelData>("Assets/Levels/Level1.asset"); 此方法只可以在编辑器模式中使用
+        LevelData levelData = Resources.Load<LevelData>($"Levels/{level_name}");
+        DeployPieces(levelData);
+    }
+
+    public void DeployPieces(LevelData levelData)
+    {
+        foreach (var item in levelData.pieces)
+        {   
+            //TODO: 1. 添加FSM组件  2. AI的武器
+            Tile tile = GetTileByWorldPosition(item.position);
+            Vector3 tilePosition = tile.transform.position;
+            //TODO: 应该放置的棋子，由用户通过UI选择后决定
+            GameObject pawn = obp.GetGameObject(item.pawnType);
+            pawn.transform.position = new Vector3(tilePosition.x, tilePosition.y, -1);
+            //TODO: 应该放置的棋子的Data名字，由用户过UI选择后决定
+            Unit placedUnit = pawn.GetComponent<Unit>();
+            placedUnit.InitializeUnit(dataManager.GetChracterData(item.unitName, CSVResource.EnemyChracter), 2);
+            placedUnit.gameObject.AddComponent<FSM>();
+            tile.unitOnTile = placedUnit;
+            placedUnit.standOnTile = tile;
+            this.allUnits.Add(placedUnit);
+            this.playerUnits.Add(placedUnit);
+        }
+    }
     public void GameStart()
     {
+        isAITurnRuning = false;
         isPrepareing = false;
         isAnimating = false;
         actions.Clear();
@@ -111,6 +149,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    bool isAITurnRuning;
     // Update is called once per frame
     void Update()
     {
@@ -130,17 +169,21 @@ public class GameManager : MonoBehaviour
 
         if(nowPlayerID == 2)
         {
-            StartCoroutine(AITurn());
+            if(isAITurnRuning == false)
+            {
+                StartCoroutine(AITurn());
+            }
         }
     }
 
     public IEnumerator AITurn()
     {
+        isAITurnRuning = true;
         List<Unit> aiList = new List<Unit>();
-        foreach(var unit in allUnits)
+        foreach(var unit in playerUnits)
         {
             if(unit.playerID == 2)
-            {
+            { 
                 aiList.Add(unit);
             }
         }
@@ -163,6 +206,36 @@ public class GameManager : MonoBehaviour
             }
         }
         TurnEnd();
+    }
+
+    public Tile GetTileByWorldPosition(Vector3 position)
+    {
+        // 一時的に障害物のコライダーを無効にする
+        foreach (var unit in this.allUnits)
+        {
+            unit.GetComponent<Collider2D>().enabled = false;
+        }
+
+        // 指定された方向にRaycastを飛ばす
+        /*        Vector2 raypoint = new Vector2(transform.position.x, transform.position.y);
+                RaycastHit2D hit = Physics2D.Raycast(raypoint, direction);*/
+        Vector2 raypoint = new Vector2(position.x,position.y);
+        //相邻位置上方的Tile
+        LayerMask tileLayerMask = LayerMask.GetMask("TileLayer");
+
+        var hit = Physics2D.OverlapCircle(position, 0.2f, tileLayerMask);
+
+        // コライダーがTileである場合、隣接タイルとして取得
+        if (hit != null && hit.CompareTag("Tile"))
+        {
+            EnablePlayerCollider(true);
+            Tile tile = hit.GetComponent<Tile>();
+            return tile;
+        }
+
+        // 見つからなかった場合は null を返す
+        EnablePlayerCollider(true);
+        return null;
     }
 
     public void GetEdgeTile()
@@ -223,6 +296,7 @@ public class GameManager : MonoBehaviour
             ReturnUnitOnMap(unit);
         }
         deadList.Clear();
+        isAITurnRuning = false;
     }
 
     public bool CheckUnitAdjacent(Unit active, Unit passive)
@@ -241,15 +315,11 @@ public class GameManager : MonoBehaviour
         //不包含则远程
 
     }
-
     public void ReturnUnitOnMap(Unit unit)
     {
-        if(unit.playerID == 1)
+        if (playerUnits.Contains(unit))
         {
-            if (playerUnits.Contains(unit))
-            {
-                playerUnits.Remove(unit);
-            }
+            playerUnits.Remove(unit);
         }
 
         if (allUnits.Contains(unit)) { 
@@ -258,12 +328,9 @@ public class GameManager : MonoBehaviour
     }
     public void RebornUnitOnMap(Unit unit)
     {
-        if (unit.playerID == 1)
+        if (!playerUnits.Contains(unit))
         {
-            if (!playerUnits.Contains(unit))
-            {
-                playerUnits.Add(unit);
-            }
+            playerUnits.Add(unit);
         }
 
         if (!allUnits.Contains(unit))

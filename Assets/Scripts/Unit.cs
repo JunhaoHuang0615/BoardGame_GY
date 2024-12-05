@@ -101,12 +101,15 @@ public class Unit : MonoBehaviour
     private void OnMouseDown()
     {   
         if(this.isAttackable == true && gm.selectedUnit !=null && gm.selectedUnit.canAttack == true)
-        {
-            gm.passiveUnit = this;
-            gm.activeUnit = gm.selectedUnit;
-            gm.activeUnit.Stand();
-            StartCoroutine( sl.LoadBattleScene());
-            CameraFollow.instance.RecordCameraPosition();
+        {   
+            if(this.playerID == gm.selectedUnit.playerID){
+                return;
+            }
+                gm.passiveUnit = this;
+                gm.activeUnit = gm.selectedUnit;
+                gm.activeUnit.Stand();
+                StartCoroutine( sl.LoadBattleScene());
+                CameraFollow.instance.RecordCameraPosition();
         }
         if(this.playerID != gm.nowPlayerID)
         {
@@ -195,10 +198,10 @@ public class Unit : MonoBehaviour
     //needSaveAttackTiles: 确认发动了攻击，才会进行存储
     public void ShowAttackRange(Tile attackTIle,bool needSaveAttackTiles = false)
     {   
-        gm.attackRangeTiles.Clear();
+        //gm.attackRangeTiles.Clear();
         //洪水攻击类型
         switch (this.selectEquip.Range_Pattern)
-        {
+        {   
             case "Mele": //近战
                 FloodAttackRange(attackTIle);
                 break;
@@ -263,7 +266,7 @@ public class Unit : MonoBehaviour
                 Tile nextTile = currentTile.GetNeighbourInDirection(direction);
                 // 如果没有下一个格子，或者超出了地图边界，停止检测
                 if (nextTile == null)
-                {
+                {   
                     break;
                 }
 
@@ -727,11 +730,13 @@ public class Unit : MonoBehaviour
     {
         this.attackRange = weapon.Range;
         this.attackAbility = weapon.Attack;
+        this.selectEquip = weapon;
         this.attackType = (AttackType)Enum.Parse(typeof(AttackType), weapon.AttackType);
     }
 
     public bool CanCounterAttack(Unit attckUnit)
     {
+        gm.attackRangeTiles.Clear();
         if (counterAttackTiles.Count > 0) {
             foreach (var tile in counterAttackTiles)
             {
@@ -793,12 +798,14 @@ public class Unit : MonoBehaviour
     {
         this.playerID = playerid;
         this.maxHealth = data.MaxHealth;
+        this.health = data.MaxHealth;
         this.defenseAbility = data.Defense;
         this.moveRange = data.MoveRange;
         this.moveSpeed = data.MoveSpeed;
         this.type = data.Type;
         this.pawnType = data.PawnType;
         this.flyHeight = data.FlyHeight;
+        this.attackEquipList = data.Weapons;
     }
 
 

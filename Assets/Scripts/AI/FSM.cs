@@ -42,6 +42,7 @@ public class FSM : MonoBehaviour
         stateDict.Add(StateType.MOVING, new MovingState(this));
         stateDict.Add(StateType.STAND, new StandState(this));
         stateDict.Add(StateType.ATTACKING, new AttackingState(this));
+        stateDict.Add(StateType.FINISH, new FinishState(this));
 
         TransitionToState(StateType.IDLE);
     }
@@ -75,5 +76,10 @@ public class FSM : MonoBehaviour
             }
         }
         return 0;
+    }
+
+    private void OnDisable()
+    {
+        Destroy(this);
     }
 }

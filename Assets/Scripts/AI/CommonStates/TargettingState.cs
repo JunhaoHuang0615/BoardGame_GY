@@ -28,6 +28,7 @@ public class TargettingState : AIStates
 
             this.aiUnit.ChangeWeapon(selected_weapon);
             this.aiUnit.attackEquipUsedRightNow = selected_weapon;
+            //this.aiUnit.selectEquip = selected_weapon;
             this.fsm.TransitionToState(StateType.MOVING);
         }
         else
@@ -92,7 +93,8 @@ public class TargettingState : AIStates
                 potentialTargets.Add(tile.unitOnTile);
             }
         }
-
+        Debug.Log("武器" + aiUnit.selectEquip.WeaponName);
+        Debug.Log(potentialTargets.Count);
         return potentialTargets;
     }
     //计算当前AI和潜在目标之间的距离分数,与武器的距离无关

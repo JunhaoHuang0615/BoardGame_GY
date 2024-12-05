@@ -84,6 +84,8 @@ public class Tile : MonoBehaviour
             placedUnit.InitializeUnit(dataManager.GetChracterData("武士", CSVResource.PlayerChracter),1);
             this.unitOnTile = placedUnit;
             placedUnit.standOnTile = this;
+            gm.allUnits.Add(placedUnit);
+            gm.playerUnits.Add(placedUnit);
             return;
         }
         {

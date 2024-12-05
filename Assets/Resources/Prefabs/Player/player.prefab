@@ -144,29 +144,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selected: 0
-  playerID: 0
-  health: 0
+  playerID: 1
+  health: 10
+  maxHealth: 10
   moveRange: 5
-  moveSpeed: 0
-  attackRange: 0
-  attackAbility: 0
+  moveSpeed: 5
+  attackRange: 2
+  attackAbility: 15
   isAttackable: 0
-  defenseAbility: 0
-  type: 1
+  defenseAbility: 5
+  type: 0
+  pawnType: 0
   flyHeight: 2
   hasMoved: 0
   hasAttacked: 0
   stand: 0
+  isDead: 0
   standOnTile: {fileID: 0}
   previousStandTile: {fileID: 0}
   moveableHightColor: {r: 0, g: 0, b: 0, a: 0}
   attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
   buttonList: {fileID: 0}
   equipList: {fileID: 0}
-  attackEquipList:
-  - Sword
-  - Axe
-  - Bow
+  attackEquipList: []
   attackType: 0
   playerAnimator: {fileID: 0}
   canExcute: 0

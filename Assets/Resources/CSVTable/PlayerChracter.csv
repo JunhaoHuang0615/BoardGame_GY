@@ -1,2 +1,2 @@
-ID,Name,Type,FlyHeight,MAX_Health,Defense,MoveRange,MoveSpeed,PawnType
-1,武士,Soldier,1,20,10,5,5,Saber
+ID,Name,Type,FlyHeight,MAX_Health,Defense,MoveRange,MoveSpeed,PawnType,Weapons
+1,武士,Soldier,1,20,10,5,5,Saber,Sword|Bow|Staff

@@ -14,6 +14,8 @@ public class UnitData
     public int MoveSpeed { get; set; } // 移动速度
     public PawnType PawnType { get; set; }
 
+    public List<string> Weapons { get; set; }
+
     // 如果需要克隆功能
     public UnitData Clone()
     {
@@ -27,7 +29,8 @@ public class UnitData
             Defense = this.Defense,
             MoveRange = this.MoveRange,
             MoveSpeed = this.MoveSpeed,
-            PawnType = this.PawnType
+            PawnType = this.PawnType,
+            Weapons = this.Weapons
         };
     }
 }

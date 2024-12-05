@@ -54,12 +54,13 @@ public class MovingState : AIStates
         }
         GameManager.Instance.ResetMovePath();
         GameManager.Instance.ResetMoveableRange();
+        Debug.Log(aiUnit.selectEquip.Range_Pattern);
         aiUnit.ShowAttackRange(targetUnit.standOnTile); //会将攻击范围的格子存储于gm里的attackRangeTiles;
         aiUnit.DFSShowMoveRange(aiUnit.moveRange, aiUnit.standOnTile);
         //确定潜在可移动的格子
         List<Tile> potentialMoveTile = new List<Tile>();
         foreach(var tile in GameManager.Instance.attackRangeTiles)
-        {
+        {   
             if (GameManager.Instance.moveableTiles.Contains(tile) && tile.unitOnTile == null)
             {
                 potentialMoveTile.Add(tile);

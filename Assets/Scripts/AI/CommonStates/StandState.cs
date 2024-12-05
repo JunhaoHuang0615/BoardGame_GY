@@ -16,6 +16,7 @@ public class StandState : AIStates
 
     public void OnEnter()
     {
+        Debug.Log("Stand");
         this.aiUnit.Stand();
     }
 
