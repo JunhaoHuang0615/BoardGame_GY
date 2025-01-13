@@ -1,0 +1,5 @@
+WeaponName,WeaponType,ImagePath,AttackBility,Defense,Speed,Accuracy
+Sword,Melee,,10,5,3,90
+Bow,Ranged,,5,10,2,50
+Axe,Melee,,15,5,3,100
+CrossBow,Ranged,,20,2,2,60

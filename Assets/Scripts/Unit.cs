@@ -38,6 +38,7 @@ public class Unit : MonoBehaviour
     public Color moveableHightColor;
     public Color attackableHightColor;
     public ButtonList buttonList;
+    public EquipButtonList equipButtonList;
 
     private GameManager gm;
     private ObjectPool obp;
@@ -58,6 +59,8 @@ public class Unit : MonoBehaviour
         obp = FindObjectOfType<ObjectPool>();
         buttonList = gameObject.AddComponent<ButtonList>();
         buttonList.unit = this;
+        equipButtonList = gameObject.AddComponent<EquipButtonList>();
+        equipButtonList.unit = this;
         playerAnimator = this.GetComponent<PlayerAnimator>();
         sl = FindObjectOfType<SceneLoader>();
     }

@@ -8,6 +8,10 @@ public enum GameObjectType
     ATTACKBUTTON,
     STANDBUTTON,
     BUTTONLIST,
+
+    EQUIPLIST,
+    ATTACK_EQUIP, //WEAPON_EQUIP
+    COMMON_EQUIP,
 }
 public class ObjectPool : MonoBehaviour
 {
@@ -123,6 +127,9 @@ public class ObjectPool : MonoBehaviour
             Copy(GameObjectType.BUTTONLIST);
             Copy(BattlePrefabType.Archer);
             Copy(BattlePrefabType.Solider);
+
+            Copy(GameObjectType.EQUIPLIST);
+            Copy(GameObjectType.ATTACK_EQUIP);
         }
     }
 }
