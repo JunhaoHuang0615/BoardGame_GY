@@ -13,6 +13,9 @@ public class ResourcesMananger : MonoBehaviour
     public Dictionary<BattlePrefabType, GameObject> battlePrefabDic;
     public Dictionary<CSVResource, byte[]> loadCSVBytesDataDic;
 
+    //缓存图片
+    public Dictionary<string, Sprite> weaponImageCache;
+
     private void Start()
     {
         prefabDic = new Dictionary<GameObjectType, GameObject>();
@@ -28,6 +31,7 @@ public class ResourcesMananger : MonoBehaviour
         battlePrefabDic.Add(BattlePrefabType.Solider, (GameObject)Resources.Load("Prefabs/Player/Player1BattleGroup"));
 
         loadCSVBytesDataDic = new Dictionary<CSVResource, byte[]>();
+        weaponImageCache = new Dictionary<string, Sprite>();
     }
     public byte[] LoadCSVBytes(CSVResource csvtype, string filePath)
     {
@@ -44,5 +48,25 @@ public class ResourcesMananger : MonoBehaviour
             }
         }
         return loadCSVBytesDataDic.ContainsKey(csvtype)? loadCSVBytesDataDic[csvtype] : null;
+    }
+
+    public Sprite LoadWeaponImage(string imagePath)
+    {
+        if (weaponImageCache.ContainsKey(imagePath))
+        {
+
+            return weaponImageCache[imagePath]; 
+        
+        }
+        Texture2D weaponTexture = Resources.Load<Texture2D>(imagePath);
+        if (weaponTexture != null) {
+            Sprite weaponSprite = Sprite.Create(weaponTexture, new Rect(0,0, weaponTexture.width, weaponTexture.height),new Vector2(0.5f,0.5f));
+            weaponImageCache[imagePath] = weaponSprite;
+
+            return weaponSprite;
+        }
+
+        Debug.LogError($"Faild to load image at path {imagePath}");
+        return null;
     }
 }
