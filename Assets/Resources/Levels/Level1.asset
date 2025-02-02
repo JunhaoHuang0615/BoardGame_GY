@@ -16,12 +16,12 @@ MonoBehaviour:
   winCondition: 
   pieces:
   - unitName: "\u6B66\u58EB_\u654C\u4EBA"
-    position: {x: 3, y: 0, z: -1}
+    position: {x: 0, y: 2, z: -1}
     teamID: 1
     pawnType: 1
     prefabPath: Assets/Resources/Prefabs/Player/player.prefab
   - unitName: "\u6B66\u58EB_\u654C\u4EBA"
-    position: {x: 0, y: 2, z: -1}
+    position: {x: 5, y: 0, z: -1}
     teamID: 1
     pawnType: 1
     prefabPath: Assets/Resources/Prefabs/Player/player.prefab
