@@ -8,20 +8,23 @@ public class BattleEventHandlder : MonoBehaviour
     public Unit attackUnit; //攻击者
     public Unit beattacked; //被攻击者
     public Animator attackUnitAnimator; //攻击方的动画组件
-    public Dictionary<AttackType, AttackPathProfile> attackPathDict;
-    public GameObject pathgroup;
+    private float movespeed = 0.01f;
+    public Vector3 activeUnit_ori_pos; //攻击方原始位置
+
+/*    public Dictionary<AttackType, AttackPathProfile> attackPathDict;
+    public GameObject pathgroup;*/
 
     private void Awake()
     {
-        attackPathDict = new Dictionary<AttackType, AttackPathProfile>();
-        AttackPathProfile[] group = pathgroup.GetComponentsInChildren<AttackPathProfile>();
-        foreach(var pathData in group)
+        //attackPathDict = new Dictionary<AttackType, AttackPathProfile>();
+        //AttackPathProfile[] group = pathgroup.GetComponentsInChildren<AttackPathProfile>();
+/*        foreach(var pathData in group)
         {
             if (!attackPathDict.ContainsKey(pathData.attackType))
             {
                 attackPathDict.Add(pathData.attackType, pathData);
             }
-        }
+        }*/
 
     }
 
@@ -30,11 +33,44 @@ public class BattleEventHandlder : MonoBehaviour
         bool flag = true;
         while (flag)
         {
-            yield return attackPathDict[attackUnit.attackType].StartAttack();
+            yield return StartAttack();
             flag = false;
         }
     }
 
+    public void GetAttackerAnimationTime(string animationName)
+    {
+        AnimationClip clip = this.GetAnimationClipByName(attackUnit.attackPrefab.GetComponentInChildren<Animator>(), animationName);
+        Debug.Log("动画名称："+clip.name + "动画时间："+clip.length);
+    }
+
+    public AnimationClip GetAnimationClipByName(Animator attackerAnimator ,string animationName) { 
+        RuntimeAnimatorController controller = attackerAnimator.runtimeAnimatorController;
+        foreach (AnimationClip eachClip in controller.animationClips)
+        {
+            if(eachClip.name == animationName)
+            {
+                return eachClip; 
+            }
+        
+        }
+        return null;
+    }
+
+    public IEnumerator StartAttack()
+    {
+        //确认攻击者移动的方向
+        //获得攻击者的位置和目标者的位置
+        GameObject activeUnit = attackUnit.attackPrefab;
+        GameObject target = beattacked.attackPrefab;
+        activeUnit_ori_pos = activeUnit.transform.position;
+        Vector3 moveNormalizedAttackDir = (target.transform.position - activeUnit.transform.position).normalized;
+        while (Vector3.Distance(activeUnit.transform.position,target.transform.position) > 1f)
+        {
+            activeUnit.transform.position += movespeed * moveNormalizedAttackDir;
+            yield return null;
+        }
+    }
     public IEnumerator AttackResult()
     {
         attackUnitAnimator.speed = 0;
@@ -43,12 +79,17 @@ public class BattleEventHandlder : MonoBehaviour
     }
     public IEnumerator AttackUnitMoveBack()
     {
-        bool flag = true;
-        while (flag)
+        GameObject activeUnit = attackUnit.attackPrefab;
+
+        Vector3 moveNormalizedAttackDir = (activeUnit_ori_pos - activeUnit.transform.position).normalized;
+        while (Vector3.Distance(activeUnit.transform.position, activeUnit_ori_pos) > 1f)
         {
-            yield return attackPathDict[attackUnit.attackType].ReturnAttack();
-            flag = false;
+            activeUnit.transform.position += movespeed * moveNormalizedAttackDir;
+            yield return null;
         }
+
+        activeUnit.transform.position = activeUnit_ori_pos;
+
     }
 
     public IEnumerator ResultHandle()

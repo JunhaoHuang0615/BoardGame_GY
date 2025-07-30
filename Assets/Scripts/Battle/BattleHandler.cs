@@ -10,6 +10,8 @@ public class BattleHandler : MonoBehaviour
     private GameManager gm;
     private SceneLoader sl;
     private ObjectPool objectPool;
+    private bool canCounterAttack;
+    private bool isAdjacant = true;
     // Start is called before the first frame update
     void Start()
     {
@@ -17,7 +19,14 @@ public class BattleHandler : MonoBehaviour
         sl = FindObjectOfType<SceneLoader>();
         objectPool = FindObjectOfType<ObjectPool>();
         sl.SetActiveSceneByName("BattleScene");
+        canCounterAttack = gm.passiveUnit.CanCounterAttacl(gm.activeUnit);
+        isAdjacant = CheckIsAdjacant(gm.activeUnit, gm.passiveUnit);
+
+
+
         StartCoroutine (StartBattle(gm.activeUnit,gm.passiveUnit));
+
+
     }
 
     // Update is called once per frame
@@ -35,22 +44,47 @@ public class BattleHandler : MonoBehaviour
         passiveUnit.attackPrefab = objectPool.GetGameObject(passiveUnit.battlePreType);
         //让PlayerID是1的单位始终在右边
         if (activeUnit.playerID == 1)
-        {   
-            //-5是为了让此单位更接近摄像机
-            activeUnit.attackPrefab.transform.position = new Vector3(5,0,-5);
-            activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+        {
+            if (isAdjacant)
+            {
+                //-5是为了让此单位更接近摄像机
+                activeUnit.attackPrefab.transform.position = new Vector3(2.5f, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
 
-            passiveUnit.attackPrefab.transform.position = new Vector3(-5,0,-5);
-            passiveUnit.attackPrefab.transform.localScale = new Vector3(-1,1,1);
+                passiveUnit.attackPrefab.transform.position = new Vector3(-2.5f, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else
+            {
+                activeUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                passiveUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+
         }
         else if (passiveUnit.playerID == 1)
-        {   
-            //此时玩家ID1被作为了被发起攻击的对象
-            passiveUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
-            passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+        {
+            if (isAdjacant)
+            {
+                //此时玩家ID1被作为了被发起攻击的对象
+                passiveUnit.attackPrefab.transform.position = new Vector3(2.5f, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
 
-            activeUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
-            activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+                activeUnit.attackPrefab.transform.position = new Vector3(-2.5f, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+            else
+            {
+                //此时玩家ID1被作为了被发起攻击的对象
+                passiveUnit.attackPrefab.transform.position = new Vector3(5, 0, -5);
+                passiveUnit.attackPrefab.transform.localScale = new Vector3(1, 1, 1);
+
+                activeUnit.attackPrefab.transform.position = new Vector3(-5, 0, -5);
+                activeUnit.attackPrefab.transform.localScale = new Vector3(-1, 1, 1);
+            }
+
         }
 
         yield return new WaitForSeconds(5);
@@ -77,9 +111,16 @@ public class BattleHandler : MonoBehaviour
             }
             if(passivePlayerTurns > 0)
             {
+                if (canCounterAttack)
+                {
+                    yield return AttackTurn(passiveUnit, activeUnit);
+                    passivePlayerTurns--;
+                }
+                else
+                {
+                    passivePlayerTurns--;
+                }
 
-                yield return AttackTurn(passiveUnit,activeUnit);
-                passivePlayerTurns--;
             }
         }
         objectPool.ReturnGameObject(activeUnit.battlePreType, activeUnit.attackPrefab);
@@ -102,5 +143,17 @@ public class BattleHandler : MonoBehaviour
             yield return attackUnit.Attack(beAttackedUnit);
             attackCount--;
         }
+    }
+
+    bool CheckIsAdjacant(Unit attackUnit, Unit passiveUnit)
+    {
+        foreach (var tile in attackUnit.standOnTile.neighbors)
+        {
+            if(tile == passiveUnit.standOnTile)
+            {   
+                return true;
+            }
+        }
+        return false;
     }
 }

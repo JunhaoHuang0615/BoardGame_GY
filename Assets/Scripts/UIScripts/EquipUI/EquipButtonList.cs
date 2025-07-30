@@ -32,14 +32,16 @@ public class EquipButtonList : MonoBehaviour
         equipButtonListOnUnit.ShowButtons(equipButtons);
     }
 
-    public void AddButton(GameObjectType type)
+    public void AddButton(GameObjectType type,string weaponName,ButtonFunction parent_button)
     {   
         if (equipButtons == null)
         {
             equipButtons = new List<EquipButtonFunction>();
         }
         EquipButtonFunction tempButton = obp.GetGameObject(type).GetComponent<EquipButtonFunction>();
+        tempButton.equipName = weaponName;
         tempButton.unit = this.unit;
+        tempButton.parentButton = parent_button;
         equipButtons.Add(tempButton);
 
 
@@ -54,26 +56,15 @@ public class EquipButtonList : MonoBehaviour
 
     public void CloseButtons()
     {
-/*        if (buttons.Count >0)
+        if (equipButtons.Count > 0)
         {
-            foreach(var button in buttons)
-            {   
-                if(button.buttonType == ButtonType.MOVE)
-                {
-                    obp.ReturnGameObject(GameObjectType.MOVEBUTTON,button.gameObject);
-                }
-                if (button.buttonType == ButtonType.ATTACK)
-                {
-                    obp.ReturnGameObject(GameObjectType.ATTACKBUTTON, button.gameObject);
-                }
-                if (button.buttonType == ButtonType.STAND)
-                {
-                    obp.ReturnGameObject(GameObjectType.STANDBUTTON, button.gameObject);
-                }
+            foreach (var button in equipButtons)
+            {
+                obp.ReturnGameObject(GameObjectType.ATTACK_EQUIP, button.gameObject);
             }
-            obp.ReturnGameObject(GameObjectType.BUTTONLIST, buttonListOnUnit.gameObject);
-            buttons.Clear();
-        }*/
+            obp.ReturnGameObject(GameObjectType.EQUIPLIST, equipButtonListOnUnit.gameObject);
+            equipButtons.Clear();
+        }
     }
 }
 

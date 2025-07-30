@@ -17,6 +17,7 @@ public class AttackingState : AIStates
     public void OnEnter()
     {   
         Debug.Log("Attacking");
+        this.aiUnit.RecordAttackRangeTiles(this.aiUnit.standOnTile); //记录ai的攻击范围
         this.aiUnit.isAttacking = true;
         if(GameManager.Instance.selectedUnit == null)
         {

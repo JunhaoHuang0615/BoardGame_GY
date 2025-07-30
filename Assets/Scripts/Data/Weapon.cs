@@ -21,6 +21,9 @@ public class Weapon
 
     public string WeaponType; //武器类型
 
+    public float range;
+
+    public string range_pattern;
 
     public Weapon Clone()
     {
@@ -33,8 +36,9 @@ public class Weapon
             speed = this.speed,
             weaponImage = this.weaponImage,
             weaponImagePath = this.weaponImagePath,
-            WeaponType = this.WeaponType
-
+            WeaponType = this.WeaponType,
+            range = this.range,
+            range_pattern = this.range_pattern,
 
 
         };

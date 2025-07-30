@@ -8,7 +8,8 @@ public enum TileType
     Plant,
     Mountain,
     Water,
- 
+    Wall,
+
 }
 public class Tile : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class Tile : MonoBehaviour
     public bool isMoveableTile; //可被移动的格子，鼠标点击时用
     public Color moveableHightColor;
     public Color attackableHightColor;
+    public Color enterColor;
 
     //A星算法参数
     public int gcost;
@@ -43,6 +45,7 @@ public class Tile : MonoBehaviour
     [SerializeField]
     private GameObject line;
     public List<Tile> neighbors;
+    private bool isEnterable = true; //为了鼠标经过是否被允许
 
 
 
@@ -85,9 +88,24 @@ public class Tile : MonoBehaviour
             Tile endTile = pm.AStarPathFind(gm.selectedUnit.standOnTile, this);
             ShowArrow(endTile);
             pm.GetPath(endTile);
+            return;
+        }
+
+        if (isEnterable)
+        {
+            HighLighEnterTile();
         }
 
 
+
+    }
+
+    public void OnMouseExit()
+    {
+        if (isEnterable)
+        {
+            ResetHighLighEnterTile();
+        }
     }
     public void UnitOnTile()
     {
@@ -153,17 +171,51 @@ public class Tile : MonoBehaviour
 
     }
 
-    public void HightMoveableTile()
+    //获取当前格子某一个方向上的临边格子
+    //返回此Tile相邻的四个Tile
+    // 上： Vector2.up  下 Vector2.down
+    public Tile GetNeighborTilesWithDirection(Vector2 direction)
     {
+        //让阻碍物的碰撞器暂时失效
+        foreach (var unit in gm.allUnits)
+        {
+            unit.GetComponent<Collider2D>().enabled = false;
+        }
+        Tile neighbor =null;
+        Vector2 raypoint = new Vector2(transform.position.x, transform.position.y);
+        RaycastHit2D hit = Physics2D.Raycast(raypoint + direction, direction);
+
+        if(hit.collider != null && hit.collider.CompareTag("Tile"))
+        {
+            neighbor = hit.collider.GetComponent<Tile>();
+        }
+        gm.EnablePlayerCollider(true);
+        return neighbor;
+
+    }
+
+    public void HightMoveableTile()
+    {   
+        isEnterable = false;
         render.color = moveableHightColor;
         isMoveableTile = true;
     }
     public void HightAttackableTile()
     {
+        isEnterable = false;
         render.color = attackableHightColor;
     }
+    public void HighLighEnterTile()
+    {
+        render.color = enterColor;
+    }
+    public void ResetHighLighEnterTile()
+    {
+        render.color = Color.white;
+    }
     public void RestHightMovableTile()
-    {   
+    {
+        isEnterable = true;
         render.color = Color.white;
         isMoveableTile = false;
     }

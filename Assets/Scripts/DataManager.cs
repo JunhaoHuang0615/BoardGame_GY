@@ -10,6 +10,11 @@ public class DataManager : MonoBehaviour
 {
     Dictionary<string, Weapon> weaponCache; //武器Data的缓存
     ResourcesMananger resourcesMananger;
+    public static DataManager Instance { get; private set; }
+    void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
         weaponCache = new Dictionary<string, Weapon>();
@@ -33,7 +38,7 @@ public class DataManager : MonoBehaviour
     {
         string csvText = Encoding.UTF8.GetString(data);
 
-        using (StreamReader reader = new StreamReader(csvText))
+        using (StringReader reader = new StringReader(csvText))
         {
             string line;
             bool firstLine = true;
@@ -56,6 +61,8 @@ public class DataManager : MonoBehaviour
                         float defense = float.Parse(fields[4]);
                         float speed = float.Parse(fields[5]);
                         float accuracy = float.Parse(fields[6]);
+                        float range = float.Parse(fields[7]);
+                        string range_pattern = fields[8];
 
                         Weapon weapon = new Weapon()
                         {
@@ -67,6 +74,8 @@ public class DataManager : MonoBehaviour
                             weaponImagePath = Imagepath,
                             WeaponType = weaponType,
                             weaponImage = resourcesMananger.LoadWeaponImage(Imagepath),
+                            range = range,
+                            range_pattern = range_pattern,
                         };
                         weaponCache[name] = weapon;
 

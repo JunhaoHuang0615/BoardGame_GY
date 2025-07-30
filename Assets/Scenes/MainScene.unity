@@ -27877,6 +27877,41 @@ PrefabInstance:
       propertyPath: playerAnimator
       value: 
       objectReference: {fileID: 1046306466}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.g
+      value: 0.87889326
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[0]
+      value: Sword
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[1]
+      value: Axe
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 658697907fda07a46ba3d3371de9aa70, type: 3}
 --- !u!4 &1302331845 stripped
@@ -29649,6 +29684,41 @@ PrefabInstance:
       propertyPath: playerAnimator
       value: 
       objectReference: {fileID: 1249050308}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.g
+      value: 0.95546293
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[0]
+      value: Sword
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[1]
+      value: Bow
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 658697907fda07a46ba3d3371de9aa70, type: 3}
 --- !u!1001 &1370226162
@@ -48350,6 +48420,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
         type: 3}
+      propertyPath: health
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
       propertyPath: playerID
       value: 1
       objectReference: {fileID: 0}
@@ -48367,6 +48442,51 @@ PrefabInstance:
         type: 3}
       propertyPath: attackRange
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.g
+      value: 0.9481443
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: enterHightColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[0]
+      value: Sword
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[1]
+      value: Bow
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[2]
+      value: Axe
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: weaponList.Array.data[3]
+      value: CrossBow
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 658697907fda07a46ba3d3371de9aa70, type: 3}

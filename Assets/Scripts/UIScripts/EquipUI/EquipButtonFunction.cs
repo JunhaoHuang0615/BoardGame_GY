@@ -17,6 +17,8 @@ public abstract class EquipButtonFunction : MonoBehaviour,IPointerEnterHandler,I
     //这个类确定控制角色Button的功能
     //public Sprite buttnSprite;
     public string euipText; // 显示按钮的文字
+    public string equipName; //物品名字/武器名字， 作为key来使用
+    public ButtonFunction parentButton;
     [Multiline]
     public string description; //鼠标放到按钮上时，可以显示的文字
     public EquipType buttonType;
@@ -24,6 +26,7 @@ public abstract class EquipButtonFunction : MonoBehaviour,IPointerEnterHandler,I
     public Action<int> actionInt;
     public Unit unit;
     protected GameManager gm;
+    public DataManager dataManager;
     //public ButtonFunction buttonObj; //储存自己身上的实例
     public abstract void OnButtonEnter(); //鼠标放在按钮，或者预选的时候
     public abstract void OnButtonClick();
@@ -42,9 +45,15 @@ public abstract class EquipButtonFunction : MonoBehaviour,IPointerEnterHandler,I
     private void Awake()
     {
         gm = FindObjectOfType<GameManager>();
+        dataManager = FindObjectOfType<DataManager>();
     }
     private void OnDisable()
     {
         this.transform.position = new Vector3(0, 0, 0);
+    }
+
+    public void SetParrentButton(ButtonFunction parrentButton)
+    {
+        this.parentButton = parrentButton;
     }
 }

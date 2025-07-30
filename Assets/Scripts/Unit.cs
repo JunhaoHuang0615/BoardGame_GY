@@ -21,8 +21,8 @@ public class Unit : MonoBehaviour
     public int health;
     public int moveRange;//移动范围
     public int moveSpeed; //移动的速度
-    public int attackRange;
-    public int attackAbility;
+    public float attackRange;
+    public float attackAbility;
     public bool isAttackable;
     public int defenseAbility;
     public CharacterType type;
@@ -37,8 +37,13 @@ public class Unit : MonoBehaviour
     public Tile previousStandTile; //记录之前所占的格子
     public Color moveableHightColor;
     public Color attackableHightColor;
+    public Color enterHightColor;
+    private bool isEnterable = true;
     public ButtonList buttonList;
-    public EquipButtonList equipButtonList;
+    public EquipButtonList equipButtonList; //武器背包
+    public List<string> weaponList = new List<string>();
+    public Weapon CurrentWeapon; //当前装备的武器
+    public Weapon hoverdWeapon; //提供玩家预览时候的武器
 
     private GameManager gm;
     private ObjectPool obp;
@@ -53,6 +58,8 @@ public class Unit : MonoBehaviour
     public GameObject attackPrefab;
     public Animator attackPrefabAnimator;
     // Start is called before the first frame update
+
+    public List<Tile> attackRangetiles = new List<Tile>(); //用于记录当前装备的武器的攻击范围格子
     void Awake()
     {
         gm = FindObjectOfType<GameManager>();
@@ -65,6 +72,39 @@ public class Unit : MonoBehaviour
         sl = FindObjectOfType<SceneLoader>();
     }
 
+    void Start()
+    {
+        Invoke("InitWeapon", 0.2f);
+    }
+
+    //武器的初始化
+    void InitWeapon()
+    {
+        if (weaponList.Count > 0)
+        {
+            this.SwitchWeapon(DataManager.Instance.GetWeapon(weaponList[0]));
+            this.HoveredWeapon(DataManager.Instance.GetWeapon(weaponList[0]));
+        }
+
+    }
+    private void OnMouseEnter()
+    {
+
+        if (isEnterable)
+        {
+            HightLightEnterUnitSprite();
+        }
+
+
+
+    }
+    public void OnMouseExit()
+    {
+        if (isEnterable)
+        {
+            ResettEnterUnitSprite();
+        }
+    }
     //这个事件要求gameobject挂载collider
     //object在Z轴方向上的位置
     private void OnMouseDown()
@@ -73,6 +113,10 @@ public class Unit : MonoBehaviour
         {
             gm.passiveUnit = this;
             gm.activeUnit = gm.selectedUnit;
+            gm.selectedUnit.SwitchWeapon(gm.selectedUnit.hoverdWeapon);
+            gm.selectedUnit.RecordAttackRangeTiles(gm.selectedUnit.standOnTile);//为了做攻击范围的记录
+
+
             gm.activeUnit.Stand();
             StartCoroutine( sl.LoadBattleScene());
             CameraFollow.instance.RecordCameraPosition();
@@ -94,6 +138,7 @@ public class Unit : MonoBehaviour
         EnableGoodCollider(true);
         gm.EnablePlayerCollider(true);
         CloseButtonList();
+        CloseEquipmentList();
 
         //取消选择
         if (selected == true && gm.selectedUnit == this)
@@ -107,6 +152,7 @@ public class Unit : MonoBehaviour
         {
            
             gm.selectedUnit.CloseButtonList();
+            gm.selectedUnit.CloseEquipmentList();
             gm.selectedUnit.selected = false;
             gm.selectedUnit.playerAnimator.SetAnimationParam(gm.selectedUnit, 0, 0);
             selected = true;
@@ -158,9 +204,100 @@ public class Unit : MonoBehaviour
         }
 
     }
+
     //attackTile 发起攻击的格子
-    public void ShowAttackRange(Tile attackTIle)
-    {   
+    public void ShowAttackRange(Tile attackTile, bool needRecordAttackRangeTiles = false)
+    {
+        //洪水攻击范围的显示
+        //this.FloodAttackRange(attackTile);
+
+        //弓箭手的攻击范围显示
+        //this.ArrowAttack(attackTile,2,4);
+
+        //十字的攻击范围
+        //this.CrossAttack(attackTile,3,3);
+
+        switch (this.hoverdWeapon.range_pattern)
+        {
+            case "Mele": //近战
+                this.FloodAttackRange(attackTile); 
+                break;
+
+            case "Ten": //十字攻击
+                this.CrossAttack(attackTile,(int)this.attackRange, (int)this.attackRange);
+                break;
+            case "Archer":
+                this.ArrowAttack(attackTile, 1, (int)this.attackRange);
+                break;
+            case "Hoseki":
+                this.FloodAttackRange(attackTile);
+                break;
+            default:
+                this.FloodAttackRange(attackTile);
+                break;
+        }
+        //记录当前装备的武器的攻击范围格子
+        if (needRecordAttackRangeTiles) {
+            // this.attackRangetiles = gm.attackRangeTiles;  由于是引用对象，是不可以直接赋值的
+            // this.attackRangetiles =new List<Tile>(gm.attackRangeTiles); //浅拷贝  这个方法是可以的
+            //等同于foreach的写法
+            this.attackRangetiles.Clear();
+            foreach (var tile in gm.attackRangeTiles)
+            {
+                this.attackRangetiles.Add(tile);
+            }
+
+        }
+    }
+
+    public void CrossAttack(Tile attackTile, int hor, int ver, bool blockable = true)
+    {
+        List < Tile> close = new List < Tile >(); //存储处理过的格子
+        Vector2[] directions = new Vector2[]
+        {
+            Vector2.up,
+            Vector2.down,
+            Vector2.left,
+            Vector2.right,
+        }; //十字范围的四个方向
+        for (int directIndex = 0; directIndex < directions.Length; directIndex++)
+        {
+            Vector2 direct = directions[directIndex];
+            int range = (direct.x == 0) ? ver : hor;
+            Tile currentTile = attackTile; //格子的起始点，一定是attackTile
+            for (int i = 0; i < range; i++) { 
+                Tile nextTile = currentTile.GetNeighborTilesWithDirection(direct); //直接拿到方向上的临边格子
+
+                if(nextTile == null) break; // 说明已经到了地图边缘
+
+                if (nextTile.isMoveableTile)
+                {
+                    continue; //为了不在移动格子内部来显示红色格子
+                }
+
+               if(blockable && nextTile.tileType == TileType.Wall)
+                {
+                    break;
+                }
+
+                //标记为可以被攻击的格子
+
+                nextTile.HightAttackableTile();
+                if (nextTile.unitOnTile != null)
+                    nextTile.unitOnTile.HightAttackUnitSprite();
+                if (!gm.attackRangeTiles.Contains(nextTile))
+                    gm.attackRangeTiles.Add(nextTile);
+
+                currentTile = nextTile;
+
+                close.Add(nextTile);
+            }
+        }
+    }
+    //从attackTile开始，到insideRange的位置，是不可以攻击。
+    //从insideRange到outsideRange的位置，可以进行攻击
+    public void ArrowAttack(Tile attackTile,int insideRange, int outsideRange)
+    {
         //now : 存放的是当前正在进行检测的Tile
         //close: 已经被检测的Tile
         //Open: 一次检测中，成功流水的Tile，目的是为了下一次的检测
@@ -169,8 +306,78 @@ public class Unit : MonoBehaviour
         List<Tile> close = new List<Tile>();
 
         //第一次检测的时候，玩家起点即是第一次的检测点
-        now.Add(attackTIle);
-        for(int i = 0; i< attackRange; i++)
+        now.Add(attackTile);
+        for (int i = 0; i < outsideRange; i++)
+        {
+            //判断监测点四个方向是否可以有水通过
+            foreach (var current in now)
+            {
+                //将检测过的点放入close
+                close.Add(current);
+                //得到相邻的点
+                List<Tile> currentTileNeighbors = current.neighbors;
+                //判断相邻的点是否有水可以经过，加入到open列表中
+                foreach (var neighbor in currentTileNeighbors)
+                {
+                    //已经检测过的点，不需要放入open
+                    if (close.Contains(neighbor))
+                    {
+                        continue;
+                    }
+                    //open列表已经存在了的neighbor，不需要重复进入open
+                    if (open.Contains(neighbor))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        open.Add(neighbor);
+                        if (!neighbor.isMoveableTile)
+                        {
+
+                            //tile变成高亮显示
+                            if (i >= insideRange)
+                            {
+                                neighbor.HightAttackableTile();
+                                if (neighbor.unitOnTile != null)
+                                    neighbor.unitOnTile.HightAttackUnitSprite();
+
+                            }
+
+                        }
+                        if(i >= insideRange)
+                        {
+                            if (!gm.attackRangeTiles.Contains(neighbor))
+                                gm.attackRangeTiles.Add(neighbor);
+                        }
+
+
+                    }
+                }
+            }
+            //找到此次水可以通过的tile
+            now.Clear();//检测完后清空Now列表
+                        //open列表复制到Now中
+            foreach (var tile in open)
+            {
+                now.Add(tile);  //把此次水通过的tile，变成下一次的检测点
+            }
+            open.Clear();
+        }
+    }
+
+    public void FloodAttackRange(Tile attackTile)
+    {
+        //now : 存放的是当前正在进行检测的Tile
+        //close: 已经被检测的Tile
+        //Open: 一次检测中，成功流水的Tile，目的是为了下一次的检测
+        List<Tile> now = new List<Tile>();
+        List<Tile> open = new List<Tile>();
+        List<Tile> close = new List<Tile>();
+
+        //第一次检测的时候，玩家起点即是第一次的检测点
+        now.Add(attackTile);
+        for (int i = 0; i < attackRange; i++)
         {
             //判断监测点四个方向是否可以有水通过
             foreach (var current in now)
@@ -202,7 +409,7 @@ public class Unit : MonoBehaviour
                             if (neighbor.unitOnTile != null)
                                 neighbor.unitOnTile.HightAttackUnitSprite();
                         }
-                        if(!gm.attackRangeTiles.Contains(neighbor))
+                        if (!gm.attackRangeTiles.Contains(neighbor))
                             gm.attackRangeTiles.Add(neighbor);
                     }
                 }
@@ -326,6 +533,7 @@ public class Unit : MonoBehaviour
     {
         if (type == CharacterType.Good)
         {
+            this.isEnterable = false;
             this.GetComponent<SpriteRenderer>().color = moveableHightColor;
         }
     }
@@ -333,10 +541,12 @@ public class Unit : MonoBehaviour
     {
         if (type == CharacterType.Good)
         {
+            this.isEnterable = false;
             this.GetComponent<SpriteRenderer>().color = attackableHightColor;
         }
         else
         {
+            this.isEnterable = false;
             this.GetComponent<SpriteRenderer>().color = attackableHightColor;
             this.isAttackable = true;
         }
@@ -346,6 +556,17 @@ public class Unit : MonoBehaviour
         this.GetComponent<SpriteRenderer>().color = Color.white;
         this.isAttackable = false;
         this.canExcute = false;
+        this.isEnterable = true;
+    }
+
+    public void HightLightEnterUnitSprite()
+    {
+        this.GetComponent<SpriteRenderer>().color = enterHightColor;
+    }
+
+    public void ResettEnterUnitSprite()
+    {
+        this.GetComponent<SpriteRenderer>().color = Color.white;
     }
     public void EnableGoodCollider(bool enable)
     {
@@ -367,14 +588,15 @@ public class Unit : MonoBehaviour
         foreach(var moveTile in moveRangeList)
         {
             List<Tile> neighbors = moveTile.neighbors;
-            foreach (var neighbor in neighbors)
+/*            foreach (var neighbor in neighbors)
             {
                 if(neighbor.isMoveableTile == false)
                 {
                     //说明此MoveTile的邻边存在不可移动的格子，是一个边缘格子
                     ShowAttackRange(moveTile); //传入的是边缘的格子
                 }
-            }
+            }*/
+            ShowAttackRange(moveTile);
         }
     }
     public void Move(List<Tile> path)
@@ -431,6 +653,10 @@ public class Unit : MonoBehaviour
     public void CloseButtonList()
     {
         buttonList.CloseButtons();
+    }
+    public void CloseEquipmentList()
+    {
+        equipButtonList.CloseButtons();
     }
 
     public void DesideButton()
@@ -529,4 +755,58 @@ public class Unit : MonoBehaviour
         this.stand = false;
     }
 
+    public void SwitchWeapon(Weapon weapon)
+    {
+        this.attackAbility = weapon.attackAbility;
+        this.attackRange = weapon.range;
+        this.attackType = (AttackType)Enum.Parse(typeof(AttackType), weapon.WeaponType);
+        this.CurrentWeapon = weapon;
+    }
+    public void HoveredWeapon(Weapon weapon)
+    {
+        this.attackAbility = weapon.attackAbility;
+        this.attackRange = weapon.range;
+        this.attackType = (AttackType)Enum.Parse(typeof(AttackType), weapon.WeaponType);
+        this.hoverdWeapon = weapon;
+    }
+
+    public void RecordAttackRangeTiles(Tile attackTile)
+    {
+        gm.attackRangeTiles.Clear();
+        this.ShowAttackRange(this.standOnTile,true);
+    }
+
+    public bool CanCounterAttacl(Unit activeUnit)
+    {
+        if (this.attackRangetiles.Count > 0)
+        {
+            foreach (var tile in attackRangetiles)
+            {
+                if (tile.unitOnTile != null && tile.unitOnTile == activeUnit)
+                {
+                    return true;
+                }
+            }
+            return false;
+
+        }
+        else {
+            //没有发动过攻击，但是被攻击
+            this.RecordAttackRangeTiles(standOnTile);
+            foreach (var tile in attackRangetiles)
+            {
+                if (tile.unitOnTile != null && tile.unitOnTile == activeUnit)
+                {
+                    gm.ResetMoveableRange();
+                    gm.ResetMovePath();
+                    return true;
+                }
+            }
+            gm.ResetMoveableRange();
+            gm.ResetMovePath();
+            return false;
+
+
+        }
+    }
 }

@@ -23,8 +23,11 @@ public class AttackButton : ButtonFunction
                 gm.actions.Push(attackButtonResetAction);*/
 
         OpenWeaponList();
+        Action attackButtonResetAction = new Action(RestButton);
+        gm.actions.Push(attackButtonResetAction); 
 
-        
+
+
     }
     public void OpenWeaponList()
     {
@@ -36,9 +39,10 @@ public class AttackButton : ButtonFunction
     public void DesideButton()
     {
         //TODO: 后续需要根据游戏进程，或者角色拥有的武器来生成按钮
-        gm.selectedUnit.equipButtonList.AddButton(GameObjectType.ATTACK_EQUIP);
-        gm.selectedUnit.equipButtonList.AddButton(GameObjectType.ATTACK_EQUIP);
-        gm.selectedUnit.equipButtonList.AddButton(GameObjectType.ATTACK_EQUIP);
+        foreach (string weapon in gm.selectedUnit.weaponList)
+        {
+            gm.selectedUnit.equipButtonList.AddButton(GameObjectType.ATTACK_EQUIP,weapon,this);
+        }
     }
 
     public void CloseWeaponList()
@@ -75,6 +79,7 @@ public class AttackButton : ButtonFunction
         }
         gm.selectedUnit = this.unit;
         this.unit.selected = true;
+        this.unit.CloseEquipmentList();
         this.unit.playerAnimator.SetAnimationParam(this.unit, 0, -1);
         this.unit.OpenButtonList();
         this.unit.canExcute = false;

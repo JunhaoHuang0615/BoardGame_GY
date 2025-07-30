@@ -1,5 +1,5 @@
-WeaponName,WeaponType,ImagePath,AttackBility,Defense,Speed,Accuracy
-Sword,Melee,,10,5,3,90
-Bow,Ranged,,5,10,2,50
-Axe,Melee,,15,5,3,100
-CrossBow,Ranged,,20,2,2,60
+WeaponName,AttackType,ImagePath,AttackBility,Defense,Speed,Accuracy,Range,RangePattern
+Sword,Close_Combat,Images/AttackEquip/sword,10,5,3,90,1,Mele
+Bow,Arrow,Images/AttackEquip/arrow,5,10,2,50,2,Archer
+Axe,Arrow,Images/AttackEquip/sword,15,5,3,100,2,Hoseki
+CrossBow,Arrow,Images/AttackEquip/arrow,20,2,2,60,3,Ten
