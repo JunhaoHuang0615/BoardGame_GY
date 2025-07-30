@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public List<Tile> attackRangeTiles; //存储处于可攻击范围的格子
     public List<Unit> playerUnits;
     public bool isAnimating; //动画进行中
+    public bool isInBattle;
 
     public Stack<Action> actions;
     public CameraFollow cameraFollow;

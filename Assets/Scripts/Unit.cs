@@ -190,10 +190,16 @@ public class Unit : MonoBehaviour
         attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 16;
         attackedUnit.attackPrefab.GetComponentInChildren<SpriteRenderer>().sortingOrder = 15;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().attackUnit = this;
+        attackPrefab.GetComponentInChildren<BattleEventHandlder>().isAttacking = true;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().beattacked = attackedUnit;
 
+        while (attackPrefab.GetComponentInChildren<BattleEventHandlder>().isAttacking)
+        {
 
-        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
+            yield return null;
+
+        }
+/*        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null;
         }
@@ -201,7 +207,7 @@ public class Unit : MonoBehaviour
         while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null; //卡在动画播放
-        }
+        }*/
 
     }
 

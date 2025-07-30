@@ -35,7 +35,8 @@ public class BattleHandler : MonoBehaviour
         
     }
     public IEnumerator StartBattle(Unit activeUnit, Unit passiveUnit)
-    {
+    {   
+        gm.isInBattle = true;
         this.activeUnit = activeUnit;
         this.passiveUnit = passiveUnit;
         this.activeUnit.isAttacking = true;
@@ -127,6 +128,7 @@ public class BattleHandler : MonoBehaviour
         objectPool.ReturnGameObject(passiveUnit.battlePreType, passiveUnit.attackPrefab);
         CameraFollow.instance.ReturnCameraPosition();
         this.activeUnit.isAttacking = false;
+        gm.isInBattle = false;
         sl.UnLoadBattleScene();
         
 

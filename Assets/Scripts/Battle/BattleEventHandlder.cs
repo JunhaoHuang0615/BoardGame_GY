@@ -8,8 +8,11 @@ public class BattleEventHandlder : MonoBehaviour
     public Unit attackUnit; //攻击者
     public Unit beattacked; //被攻击者
     public Animator attackUnitAnimator; //攻击方的动画组件
-    private float movespeed = 0.01f;
+    private float movespeed = 1f;
     public Vector3 activeUnit_ori_pos; //攻击方原始位置
+    public bool isAttacking = false;
+
+    private float animationTime = 0;
 
 /*    public Dictionary<AttackType, AttackPathProfile> attackPathDict;
     public GameObject pathgroup;*/
@@ -28,6 +31,11 @@ public class BattleEventHandlder : MonoBehaviour
 
     }
 
+    public void AttackEnd()
+    {
+        isAttacking = false;
+    }
+
     public IEnumerator AttackMovement()
     {
         bool flag = true;
@@ -38,9 +46,14 @@ public class BattleEventHandlder : MonoBehaviour
         }
     }
 
+    public void PlayAttackerAnim(string animationName)
+    {
+        attackUnit.attackPrefab.GetComponentInChildren<Animator>().Play(animationName);
+    }
     public void GetAttackerAnimationTime(string animationName)
     {
         AnimationClip clip = this.GetAnimationClipByName(attackUnit.attackPrefab.GetComponentInChildren<Animator>(), animationName);
+        animationTime = clip.length;
         Debug.Log("动画名称："+clip.name + "动画时间："+clip.length);
     }
 
@@ -65,9 +78,12 @@ public class BattleEventHandlder : MonoBehaviour
         GameObject target = beattacked.attackPrefab;
         activeUnit_ori_pos = activeUnit.transform.position;
         Vector3 moveNormalizedAttackDir = (target.transform.position - activeUnit.transform.position).normalized;
+        float distance = Vector3.Distance(activeUnit.transform.position, target.transform.position);
+        float speed = distance / animationTime * Time.deltaTime;
+
         while (Vector3.Distance(activeUnit.transform.position,target.transform.position) > 1f)
         {
-            activeUnit.transform.position += movespeed * moveNormalizedAttackDir;
+            activeUnit.transform.position += speed * moveNormalizedAttackDir;
             yield return null;
         }
     }
