@@ -192,8 +192,13 @@ public class Unit : MonoBehaviour
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().attackUnit = this;
         attackPrefab.GetComponentInChildren<BattleEventHandlder>().beattacked = attackedUnit;
 
+        attackPrefab.GetComponentInChildren<BattleEventHandlder>().isAttacking = true;
 
-        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
+        while (attackPrefab.GetComponentInChildren<BattleEventHandlder>().isAttacking)
+        {
+            yield return null;
+        }
+/*        while (!attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null;
         }
@@ -201,7 +206,7 @@ public class Unit : MonoBehaviour
         while (attackPrefabAnimator.GetCurrentAnimatorStateInfo(0).IsName(attackType.ToString()))
         {
             yield return null; //卡在动画播放
-        }
+        }*/
 
     }
 
