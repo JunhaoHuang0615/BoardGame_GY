@@ -27874,6 +27874,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
         type: 3}
+      propertyPath: battlePreType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
       propertyPath: playerAnimator
       value: 
       objectReference: {fileID: 1046306466}
@@ -29678,6 +29683,11 @@ PrefabInstance:
         type: 3}
       propertyPath: attackRange
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: battlePreType
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
         type: 3}
@@ -47617,6 +47627,12 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 224751339011618942, guid: e1b0985d304a3964ca008467981d2195,
+        type: 3}
+      propertyPath: attackPrefab
+      value: 
+      objectReference: {fileID: 8904656970512222929, guid: 9de78513cf562844ca91a312a69dc747,
+        type: 3}
     - target: {fileID: 3832371642460154310, guid: e1b0985d304a3964ca008467981d2195,
         type: 3}
       propertyPath: m_Name
@@ -48511,6 +48527,11 @@ PrefabInstance:
         type: 3}
       propertyPath: attackRange
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
+        type: 3}
+      propertyPath: battlePreType
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7746155574577065503, guid: 658697907fda07a46ba3d3371de9aa70,
         type: 3}

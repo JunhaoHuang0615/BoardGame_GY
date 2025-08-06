@@ -48,6 +48,30 @@ public class BattleEventHandlder : MonoBehaviour
         }
     }
 
+    public IEnumerator MoveChildComp(string childName)
+    {
+        GameObject target = beattacked.attackPrefab;
+        Transform[] childComps = GetComponentsInChildren<Transform>();
+        Transform childComp = null;
+        foreach (var trans in childComps) { 
+            if(trans.gameObject.name == childName)
+            {
+                childComp = trans;
+            }
+        }
+        Vector3 moveNormalizedAttackDir = (target.transform.position - childComp.transform.position).normalized;
+
+        float distance = Vector3.Distance(childComp.transform.position, target.transform.position);
+
+        float speed = distance / animationTime * Time.deltaTime;
+
+        while (Vector3.Distance(childComp.transform.position, target.transform.position) > 1f)
+        {
+            childComp.transform.position += speed * moveNormalizedAttackDir;
+            yield return null;
+        }
+    }
+
     public void GetAttackerAnimationTime(string animationName)
     {
         AnimationClip clip = this.GetAnimationClipByName(attackUnit.attackPrefab.GetComponentInChildren<Animator>(), animationName);

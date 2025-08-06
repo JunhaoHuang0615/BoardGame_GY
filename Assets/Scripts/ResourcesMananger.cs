@@ -27,7 +27,7 @@ public class ResourcesMananger : MonoBehaviour
         prefabDic.Add(GameObjectType.ATTACK_EQUIP, (GameObject)Resources.Load("Prefabs/UI/EquipUI/AttackEquipButton"));
 
         battlePrefabDic = new Dictionary<BattlePrefabType, GameObject>();
-        battlePrefabDic.Add(BattlePrefabType.Archer, (GameObject)Resources.Load("Prefabs/Player/Player1BattleGroup"));
+        battlePrefabDic.Add(BattlePrefabType.Archer, (GameObject)Resources.Load("Prefabs/Arrow/ArrowBattleGroup"));
         battlePrefabDic.Add(BattlePrefabType.Solider, (GameObject)Resources.Load("Prefabs/Player/Player1BattleGroup"));
 
         loadCSVBytesDataDic = new Dictionary<CSVResource, byte[]>();
