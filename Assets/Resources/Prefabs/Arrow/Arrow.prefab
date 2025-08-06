@@ -146,8 +146,7 @@ MonoBehaviour:
   isAttacking: 0
   attackType: 1
   battlePreType: 0
-  attackPrefab: {fileID: 8904656970512222929, guid: 9de78513cf562844ca91a312a69dc747,
-    type: 3}
+  attackPrefab: {fileID: 0}
   attackPrefabAnimator: {fileID: 0}
   attackRangetiles: []
 --- !u!114 &8366341758901351962

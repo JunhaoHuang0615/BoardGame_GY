@@ -29,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 326288136921458356}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -161,13 +161,20 @@ MonoBehaviour:
   previousStandTile: {fileID: 0}
   moveableHightColor: {r: 0, g: 0, b: 0, a: 0}
   attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
+  enterHightColor: {r: 0, g: 0, b: 0, a: 0}
   buttonList: {fileID: 0}
+  equipButtonList: {fileID: 0}
+  weaponList: []
   playerAnimator: {fileID: 0}
   canExcute: 0
   canAttack: 0
+  isAttacking: 0
+  attackType: 0
+  battlePreType: 1
   attackPrefab: {fileID: 8273440091368145741, guid: fa9cbc0f2e003b74d8dfddf6e6f066c8,
     type: 3}
   attackPrefabAnimator: {fileID: 0}
+  attackRangetiles: []
 --- !u!114 &5468810189403322934
 MonoBehaviour:
   m_ObjectHideFlags: 0
