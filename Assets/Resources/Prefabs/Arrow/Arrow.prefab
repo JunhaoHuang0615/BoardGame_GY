@@ -140,7 +140,7 @@ MonoBehaviour:
   equipButtonList: {fileID: 0}
   weaponList:
   - Bow
-  playerAnimator: {fileID: 0}
+  playerAnimator: {fileID: 8366341758901351962}
   canExcute: 0
   canAttack: 0
   isAttacking: 0
