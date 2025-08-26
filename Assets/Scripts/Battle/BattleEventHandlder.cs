@@ -38,16 +38,6 @@ public class BattleEventHandlder : MonoBehaviour
         isAttacking = false;
     }
 
-    public IEnumerator AttackMovement()
-    {
-        bool flag = true;
-        while (flag)
-        {
-            yield return StartAttack();
-            flag = false;
-        }
-    }
-
     public void GetAttackerAnimationTime(string animationName)
     {
         AnimationClip clip = this.GetAnimationClipByName(attackUnit.attackPrefab.GetComponentInChildren<Animator>(), animationName);
@@ -68,24 +58,37 @@ public class BattleEventHandlder : MonoBehaviour
         return null;
     }
 
-    public IEnumerator StartAttack()
+    public IEnumerator StartAttack(string attackpoint_name = "")
     {
         //确认攻击者移动的方向
         //获得攻击者的位置和目标者的位置
         GameObject activeUnit = attackUnit.attackPrefab;
         GameObject target = beattacked.attackPrefab;
+        Transform targetPosition = target.transform;
         activeUnit_ori_pos = activeUnit.transform.position;
-        Vector3 moveNormalizedAttackDir = (target.transform.position - activeUnit.transform.position).normalized;
+        if(attackpoint_name != "")
+        {
+            foreach (var attackpoint in target.GetComponentsInChildren<AttackPoint>())
+            {
+                if(attackpoint.attack_point_name == attackpoint_name)
+                {
+                    targetPosition = attackpoint.GetComponent<Transform>();
+                }
+            }
+        }
 
-        float distance = Vector3.Distance(activeUnit.transform.position, target.transform.position);
+        Vector3 moveNormalizedAttackDir = (targetPosition.position - activeUnit.transform.position).normalized;
+
+        float distance = Vector3.Distance(activeUnit.transform.position, targetPosition.position);
 
         float speed = distance / animationTime * Time.deltaTime;
 
-        while (Vector3.Distance(activeUnit.transform.position,target.transform.position) > 1f)
+        while (Vector3.Distance(activeUnit.transform.position, targetPosition.position) > 1f)
         {
             activeUnit.transform.position += speed * moveNormalizedAttackDir;
             yield return null;
         }
+        activeUnit.transform.position = targetPosition.position; //为了保证目标位置绝对准确
     }
 
     public IEnumerator ChildCompMovement(string childCompName)
@@ -115,7 +118,7 @@ public class BattleEventHandlder : MonoBehaviour
             childCompObj.transform.position += speed * moveNormalizedAttackDir;
             yield return null;
         }
-        childCompObj.transform.position = Vector3.zero;
+        childCompObj.transform.localPosition = Vector3.zero;
 
     }
     public IEnumerator AttackResult()

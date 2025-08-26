@@ -103,8 +103,8 @@ AnimationClip:
     intParameter: 0
     messageOptions: 0
   - time: 0.016666668
-    functionName: AttackMovement
-    data: 
+    functionName: StartAttack
+    data: solider_attack_point
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
