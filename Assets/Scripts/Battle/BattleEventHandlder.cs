@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using PathCreation;
+using TMPro;
 
 public class BattleEventHandlder : MonoBehaviour
 {
@@ -91,9 +92,15 @@ public class BattleEventHandlder : MonoBehaviour
         activeUnit.transform.position = targetPosition.position; //为了保证目标位置绝对准确
     }
 
-    public IEnumerator ChildCompMovement(string childCompName)
+    public IEnumerator ChildCompMovement(string stringParameters)
     {
+        // 由于Unity的动画时间轴上的参数只能传递一个，那么我们需要通过|来q区分传递的参数
+        //拆分参数字符串
+        string[] paras = stringParameters.Split('|');
+        string childCompName = paras[0];
+        string attackPointName = paras[1];
         //确认攻击者移动的方向
+
         //获得攻击者的位置和目标者的位置
         Transform[] childrenTransform = GetComponentsInChildren<Transform>();
         GameObject childCompObj = null;
@@ -105,15 +112,28 @@ public class BattleEventHandlder : MonoBehaviour
             }
         }
         
-        GameObject target = beattacked.attackPrefab;
-        activeUnit_ori_pos = childCompObj.transform.position;
-        Vector3 moveNormalizedAttackDir = (target.transform.position - childCompObj.transform.position).normalized;
+        Transform target = beattacked.attackPrefab.transform;
 
-        float distance = Vector3.Distance(childCompObj.transform.position, target.transform.position);
+        //获取攻击点
+        if (attackPointName != "")
+        {
+            foreach (var attackpoint in target.GetComponentsInChildren<AttackPoint>())
+            {
+                if (attackpoint.attack_point_name == attackPointName)
+                {
+                    target = attackpoint.GetComponent<Transform>();
+                }
+            }
+        }
+
+        activeUnit_ori_pos = childCompObj.transform.position;
+        Vector3 moveNormalizedAttackDir = (target.position - childCompObj.transform.position).normalized;
+
+        float distance = Vector3.Distance(childCompObj.transform.position, target.position);
 
         float speed = distance / animationTime * Time.deltaTime;
 
-        while (Vector3.Distance(childCompObj.transform.position, target.transform.position) > 1f)
+        while (Vector3.Distance(childCompObj.transform.position, target.position) > 1f)
         {
             childCompObj.transform.position += speed * moveNormalizedAttackDir;
             yield return null;

@@ -104,7 +104,7 @@ AnimationClip:
     messageOptions: 0
   - time: 0.016666668
     functionName: ChildCompMovement
-    data: Gongjian
+    data: Gongjian|Arrow_attack_point
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
