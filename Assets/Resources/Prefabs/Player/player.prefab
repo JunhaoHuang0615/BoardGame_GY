@@ -152,7 +152,7 @@ MonoBehaviour:
   attackAbility: 0
   isAttackable: 0
   defenseAbility: 0
-  type: 1
+  type: 0
   flyHeight: 2
   hasMoved: 0
   hasAttacked: 0

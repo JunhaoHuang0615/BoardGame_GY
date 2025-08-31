@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Mountain
   - Tile
+  - Water
   layers:
   - Default
   - TransparentFX

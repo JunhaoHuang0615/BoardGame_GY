@@ -51,7 +51,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 334ccb162681b46429ef6dae07b61a6e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -134,6 +134,22 @@ MonoBehaviour:
   type: 2
   flyHeight: 0
   hasMoved: 0
+  hasAttacked: 0
+  stand: 0
   standOnTile: {fileID: 0}
-  moveableHightColor: {r: 0.25943398, g: 0.41803834, b: 1, a: 0.8352941}
-  attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
+  previousStandTile: {fileID: 0}
+  moveableHightColor: {r: 0.25943398, g: 0.41803834, b: 1, a: 0.5882353}
+  attackableHightColor: {r: 1, g: 0, b: 0, a: 0.5882353}
+  enterHightColor: {r: 0.8679245, g: 0.84268004, b: 0.18832323, a: 0.58431375}
+  buttonList: {fileID: 0}
+  equipButtonList: {fileID: 0}
+  weaponList: []
+  playerAnimator: {fileID: 0}
+  canExcute: 0
+  canAttack: 0
+  isAttacking: 0
+  attackType: 0
+  battlePreType: 0
+  attackPrefab: {fileID: 0}
+  attackPrefabAnimator: {fileID: 0}
+  attackRangetiles: []

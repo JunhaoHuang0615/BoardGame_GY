@@ -165,7 +165,7 @@ public class Tile : MonoBehaviour
         {
             neighbors.Add(hit.collider.GetComponent<Tile>());
         }
-        gm.EnablePlayerCollider(true);
+        gm.EnableAllUnitCollider(true);
         this.neighbors = neighbors;
         return neighbors;
 
@@ -189,7 +189,7 @@ public class Tile : MonoBehaviour
         {
             neighbor = hit.collider.GetComponent<Tile>();
         }
-        gm.EnablePlayerCollider(true);
+        gm.EnableAllUnitCollider(true);
         return neighbor;
 
     }

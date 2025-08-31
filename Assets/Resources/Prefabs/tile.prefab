@@ -216,7 +216,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 334ccb162681b46429ef6dae07b61a6e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -273,9 +273,9 @@ MonoBehaviour:
   tileHeight: 0
   unitOnTile: {fileID: 0}
   isMoveableTile: 0
-  moveableHightColor: {r: 0.25943398, g: 0.4913245, b: 1, a: 0.8156863}
-  attackableHightColor: {r: 1, g: 0, b: 0, a: 0.7882353}
-  enterColor: {r: 0.972549, g: 0.95686275, b: 0.31764707, a: 1}
+  moveableHightColor: {r: 0.25943398, g: 0.4913245, b: 1, a: 0.5882353}
+  attackableHightColor: {r: 1, g: 0, b: 0, a: 0.5882353}
+  enterColor: {r: 0.972549, g: 0.95686275, b: 0.31764707, a: 0.5882353}
   gcost: 0
   hcost: 0
   fcost: 0
