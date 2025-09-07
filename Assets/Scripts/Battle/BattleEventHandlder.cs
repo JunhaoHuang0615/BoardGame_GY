@@ -171,7 +171,7 @@ public class BattleEventHandlder : MonoBehaviour
     {
         int randomSeed = Random.Range(0,101);// 0可以取得到， 101取不到， 需要值是0~100的整型
 
-        if(randomSeed >= 50)
+        if(randomSeed >= 95)
         {
             //闪避
             beattacked.attackPrefab.GetComponentInChildren<Animator>().Play("miss");
@@ -189,6 +189,7 @@ public class BattleEventHandlder : MonoBehaviour
         else
         {
             //扣血
+            this.beattacked.DamageTaken(attackUnit);
             yield return new WaitForSeconds(2);
         }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.UI.CanvasScaler;
 
 public class BattleHandler : MonoBehaviour
 {
@@ -107,6 +108,11 @@ public class BattleHandler : MonoBehaviour
             if(activePlayerTurns > 0)
             {
                 yield return AttackTurn(activeUnit, passiveUnit);
+                if (IsUnitDead(passiveUnit))
+                {
+                    yield return PlayUnitDeadAnimation(passiveUnit);
+                    break;
+                }
                 activePlayerTurns--;
             }
             if(passivePlayerTurns > 0)
@@ -114,6 +120,12 @@ public class BattleHandler : MonoBehaviour
                 if (canCounterAttack)
                 {
                     yield return AttackTurn(passiveUnit, activeUnit);
+                    if (IsUnitDead(activeUnit))
+                    {
+                        yield return PlayUnitDeadAnimation(activeUnit);
+
+                        break;
+                    }
                     passivePlayerTurns--;
                 }
                 else
@@ -123,6 +135,7 @@ public class BattleHandler : MonoBehaviour
 
             }
         }
+        Debug.Log("战斗结束");
         objectPool.ReturnGameObject(activeUnit.battlePreType, activeUnit.attackPrefab);
         objectPool.ReturnGameObject(passiveUnit.battlePreType, passiveUnit.attackPrefab);
         CameraFollow.instance.ReturnCameraPosition();
@@ -145,6 +158,21 @@ public class BattleHandler : MonoBehaviour
         }
     }
 
+    IEnumerator PlayUnitDeadAnimation(Unit DeadUnit)
+    {
+        DeadUnit.attackPrefab.GetComponentInChildren<Animator>().Play("Dead");
+        while (!DeadUnit.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+        {
+            yield return null;
+        }
+        //判断当前动画是否已经完成
+        while (DeadUnit.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+        {
+            yield return null; //卡在动画播放
+        }
+        EventManager.TriggerEvent("OnUnitDeath", DeadUnit);
+    }
+
     bool CheckIsAdjacant(Unit attackUnit, Unit passiveUnit)
     {
         foreach (var tile in attackUnit.standOnTile.neighbors)
@@ -156,4 +184,20 @@ public class BattleHandler : MonoBehaviour
         }
         return false;
     }
+
+    bool IsUnitDead(Unit unit)
+    {
+        if (unit.health > 0)
+        {
+            return false;
+        }
+        else
+        {
+            //触发死亡事件
+            return true;
+
+        }
+    }
+
+    
 }

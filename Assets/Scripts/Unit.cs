@@ -71,10 +71,34 @@ public class Unit : MonoBehaviour
         playerAnimator = this.GetComponent<PlayerAnimator>();
         sl = FindObjectOfType<SceneLoader>();
     }
-
+    
     void Start()
     {
         Invoke("InitWeapon", 0.2f);
+    }
+
+    private void OnUnitDeath(Unit deadUnit)
+    {
+        if (deadUnit == this)
+        {
+            //执行死亡动画
+            this.playerAnimator.UnitDead(true);
+            Debug.Log($"{name} 收到其他单位 {deadUnit.name} 的死亡事件");
+        }
+        else
+        {
+            //Debug.Log($"{name} 收到其他单位 {deadUnit.name} 的死亡事件");
+        }
+    }
+
+    void OnEnable()
+    {
+        EventManager.AddListener<Unit>("OnUnitDeath", OnUnitDeath);
+    }
+
+    void OnDisable()
+    {
+        EventManager.RemoveListener<Unit>("OnUnitDeath", OnUnitDeath);
     }
 
     //武器的初始化
@@ -814,4 +838,22 @@ public class Unit : MonoBehaviour
 
         }
     }
+
+    public void DamageTaken(Unit activeUnit)
+    {
+        //攻击者： activeUnit
+        // 如果被攻击的Unit防御力大于攻击者的攻击力，也至少要扣除1点血
+        int damage = 0;
+        if(this.defenseAbility > activeUnit.CurrentWeapon.attackAbility)
+        {
+            damage = 1;
+        }
+        else
+        {
+            damage = (int)activeUnit.CurrentWeapon.attackAbility - defenseAbility;
+        }
+        this.health -= damage;
+    }
+
+    
 }

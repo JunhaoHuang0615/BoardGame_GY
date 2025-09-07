@@ -15,4 +15,15 @@ public class PlayerAnimator : MonoBehaviour
         animator.SetInteger("X",x);
         animator.SetInteger("Y", y);
     }
+
+    public void PlayAnim(string animName)
+    {
+        animator.Play(animName);
+    }
+
+    public void UnitDead(bool isDead)
+    {
+        animator.SetBool("IsDead", isDead);
+        animator.SetTrigger("DeadTrigger");
+    }
 }
