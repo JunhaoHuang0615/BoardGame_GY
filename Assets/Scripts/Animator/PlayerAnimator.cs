@@ -15,4 +15,13 @@ public class PlayerAnimator : MonoBehaviour
         animator.SetInteger("X",x);
         animator.SetInteger("Y", y);
     }
+
+    public void SetDead(bool isDead)
+    {
+        animator.SetBool("IsDead", isDead);
+        if (isDead)
+        {
+            animator.SetTrigger("Dead");
+        }
+    }
 }

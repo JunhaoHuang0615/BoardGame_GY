@@ -75,6 +75,17 @@ public class Unit : MonoBehaviour
     void Start()
     {
         Invoke("InitWeapon", 0.2f);
+        EventManager.AddEventListener<Unit>("UnitDead", OnUnitDead);
+    }
+
+    private void OnUnitDead(Unit deadUnit)
+    {
+        if (deadUnit != this) {
+            //判断死亡的Unit是否是自己
+            return;
+        }
+        //如果是自己。播放死亡动画
+        this.playerAnimator.SetDead(true);
     }
 
     //武器的初始化
@@ -813,5 +824,21 @@ public class Unit : MonoBehaviour
 
 
         }
+    }
+
+    // damageUnit: 给予伤害的Unit
+    public void DamageTaken(Unit damageUnit) {
+        float damage = 0;
+        if(this.defenseAbility > damageUnit.CurrentWeapon.attackAbility)
+        {
+            damage = 1;
+        }
+        else
+        {
+            damage = damageUnit.CurrentWeapon.attackAbility - this.defenseAbility;
+        }
+
+        this.health -= (int)damage;
+    
     }
 }

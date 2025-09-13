@@ -12,6 +12,12 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         buttonLists = new List<ButtonListTransform>();
+        EventManager.AddEventListener<Unit>("UnitDead", onUnitDead);
+    }
+
+    private void onUnitDead(Unit unitName)
+    {
+
     }
 
     public bool isOnButtonList()

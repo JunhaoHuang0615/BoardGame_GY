@@ -107,6 +107,11 @@ public class BattleHandler : MonoBehaviour
             if(activePlayerTurns > 0)
             {
                 yield return AttackTurn(activeUnit, passiveUnit);
+                if (IsUnitDead(passiveUnit))
+                {
+                    yield return Dead(passiveUnit);
+                    break; // 不要用yield break，否则会退出整个方法 
+                }
                 activePlayerTurns--;
             }
             if(passivePlayerTurns > 0)
@@ -114,6 +119,12 @@ public class BattleHandler : MonoBehaviour
                 if (canCounterAttack)
                 {
                     yield return AttackTurn(passiveUnit, activeUnit);
+                    if (IsUnitDead(activeUnit))
+                    {
+                        yield return Dead(activeUnit);
+                        
+                        break ;
+                    }
                     passivePlayerTurns--;
                 }
                 else
@@ -123,6 +134,7 @@ public class BattleHandler : MonoBehaviour
 
             }
         }
+        
         objectPool.ReturnGameObject(activeUnit.battlePreType, activeUnit.attackPrefab);
         objectPool.ReturnGameObject(passiveUnit.battlePreType, passiveUnit.attackPrefab);
         CameraFollow.instance.ReturnCameraPosition();
@@ -155,5 +167,31 @@ public class BattleHandler : MonoBehaviour
             }
         }
         return false;
+    }
+
+    bool IsUnitDead(Unit unit)
+    {
+        if(unit.health > 0)
+        {
+            return false;
+        }else
+        {
+            return true;
+        }
+    }
+
+    IEnumerator Dead(Unit unit) {
+
+        unit.attackPrefab.GetComponentInChildren<Animator>().Play("Dead");
+        while (!unit.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+        {
+            yield return null;
+        }
+        //判断当前动画是否已经完成
+        while (unit.attackPrefab.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).IsName("Dead"))
+        {
+            yield return null; //卡在动画播放
+        }
+        EventManager.TriggerEvent("UnitDead", unit);
     }
 }
