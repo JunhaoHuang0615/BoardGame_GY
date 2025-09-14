@@ -176,6 +176,7 @@ public class BattleHandler : MonoBehaviour
             return false;
         }else
         {
+            EventManager.TriggerEvent("DeadAnimPlaying");
             return true;
         }
     }

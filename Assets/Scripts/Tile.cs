@@ -122,7 +122,6 @@ public class Tile : MonoBehaviour
             unitOnTile = collider.GetComponent<Unit>();
             if (collider.CompareTag("Player"))
             {
-                print("Player比较");
                 gm.playerUnits.Add(collider.GetComponent<Unit>());
             }
 

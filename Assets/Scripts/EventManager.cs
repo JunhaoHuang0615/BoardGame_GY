@@ -44,4 +44,39 @@ public static class EventManager
             callback?.Invoke(arg);
         }
     }
+
+    //无参事件
+    // 注册无参事件
+    public static void AddEventListener(string eventName, Action listener)
+    {
+        if (!eventTable.ContainsKey(eventName))
+        {
+            eventTable[eventName] = null;
+        }
+
+        if (eventTable[eventName] != null && eventTable[eventName].GetType() != typeof(Action))
+        {
+            throw new Exception($"事件 {eventName} 类型不匹配：需要无参 Action");
+        }
+
+        eventTable[eventName] = (Action)eventTable[eventName] + listener;
+    }
+
+    // 移除无参事件
+    public static void RemoveEventListener(string eventName, Action listener)
+    {
+        if (eventTable.ContainsKey(eventName))
+        {
+            eventTable[eventName] = (Action)eventTable[eventName] - listener;
+        }
+    }
+
+    public static void TriggerEvent(string eventName)
+    {
+        if (eventTable.ContainsKey(eventName))
+        {
+            var callback = eventTable[eventName] as Action;
+            callback?.Invoke();
+        }
+    }
 }

@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public List<Tile> attackRangeTiles; //存储处于可攻击范围的格子
     public List<Unit> playerUnits;
     public bool isAnimating; //动画进行中
+    public List<Unit> deadUnitList = new List<Unit>();
 
     public Stack<Action> actions;
     public CameraFollow cameraFollow;
@@ -28,6 +29,7 @@ public class GameManager : MonoBehaviour
     //控制回合制系统
     public int nowPlayerID; //当前回合可操控的棋子
     public int nextTurnPlayerID; //下一回合可操控的棋子ID
+    public bool isDeadAnimPlaying = false;
 
     //战斗系统相关
     public Unit activeUnit;
@@ -35,6 +37,7 @@ public class GameManager : MonoBehaviour
 
     //AI相关
     public Unit aiTarget;
+
     private void Awake()
     {
         Instance = this;
@@ -56,9 +59,16 @@ public class GameManager : MonoBehaviour
         {
             allUnits.Add(unit);
         }
+        EventManager.AddEventListener<Unit>("UnitReturn", OnUnitReturn);
+        EventManager.AddEventListener("DeadAnimPlaying", OnDeadAnimationPlaying);
         GetEdgeTile();
         nowPlayerID = 1;
         nextTurnPlayerID = 2;
+    }
+
+    public void OnDeadAnimationPlaying()
+    {
+        isDeadAnimPlaying = true;
     }
     //取消选择的时候执行
     public void ResetMoveableRange()
@@ -125,10 +135,14 @@ public class GameManager : MonoBehaviour
 
         foreach(var ai in aiList)
         {
+            while (isDeadAnimPlaying)
+            {
+                yield return null;
+            }
             this.selectedUnit = ai;
             ai.selected = true;
             //
-            while(ai.GetComponent<FSM>().GetCurrentState() != StateType.STAND)
+            while (ai.GetComponent<FSM>().GetCurrentState() != StateType.STAND && ai.GetComponent<FSM>().GetCurrentState() != StateType.FINISH)
             {
                 yield return null;
             }
@@ -181,12 +195,51 @@ public class GameManager : MonoBehaviour
         moveableTiles.Clear();
         actions.Clear();
         foreach (var unit in playerUnits)
-        {
+        {   
             unit.RestUnitState();
         }
         foreach(var tile in tiles)
         {
             tile.RestHightMovableTile();
         }
+        foreach (var unit in deadUnitList)
+        {
+            if (allUnits.Contains(unit))
+            {
+                allUnits.Remove(unit);
+            }
+                //玩家死亡
+            if (playerUnits.Contains(unit))
+                playerUnits.Remove(unit);
+
+            Destroy(unit.gameObject);
+        }
+        deadUnitList.Clear();
     }
+
+    public void OnUnitReturn(Unit deadUnit)
+    {
+        deadUnit.gameObject.SetActive(false);
+        deadUnitList.Add(deadUnit);
+        isDeadAnimPlaying = false;
+
+    }
+
+    public IEnumerator WaitForAnimationn(Animator animator, String animName , int animationStateInfo = 0, Action onFinished = null)
+    {
+        while (!animator.GetCurrentAnimatorStateInfo(animationStateInfo).IsName(animName))
+        {
+            yield return null;
+        }
+        //判断当前动画是否已经完成
+        while (animator.GetCurrentAnimatorStateInfo(animationStateInfo).IsName(animName))
+        {
+            yield return null; //卡在动画播放
+        }
+
+        onFinished?.Invoke();
+    }
+
+
+
 }

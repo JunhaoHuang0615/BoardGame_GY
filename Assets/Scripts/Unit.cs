@@ -53,6 +53,7 @@ public class Unit : MonoBehaviour
     public bool canAttack;
     public bool isAttacking;
     public AttackType attackType;
+    public bool isDead = false;
 
     public BattlePrefabType battlePreType;
     public GameObject attackPrefab;
@@ -86,7 +87,16 @@ public class Unit : MonoBehaviour
         }
         //如果是自己。播放死亡动画
         this.playerAnimator.SetDead(true);
+        this.isDead = true;
+        this.standOnTile.unitOnTile = null;
+        //等待死亡动画的结束之后要清理Unit
+        StartCoroutine(gm.WaitForAnimationn(this.playerAnimator.animator, "Dead", 0, () =>
+        {
+            EventManager.TriggerEvent("UnitReturn", deadUnit);
+        }));
     }
+
+    
 
     //武器的初始化
     void InitWeapon()
