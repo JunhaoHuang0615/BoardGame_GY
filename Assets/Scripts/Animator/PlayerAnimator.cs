@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerAnimator : MonoBehaviour
 {
     [SerializeField]
-    Animator animator;
+    public Animator animator;
 
     //给Animator添加参数
     public void SetAnimationParam(Unit unit, int x, int y)

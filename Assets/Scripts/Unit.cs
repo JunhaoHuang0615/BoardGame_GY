@@ -86,6 +86,9 @@ public class Unit : MonoBehaviour
         }
         //如果是自己。播放死亡动画
         this.playerAnimator.SetDead(true);
+        StartCoroutine(gm.WaitAnimation(this.playerAnimator.animator, "Dead", () =>{
+            EventManager.TriggerEvent<Unit>("UnitReturn", deadUnit);
+        }));
     }
 
     //武器的初始化

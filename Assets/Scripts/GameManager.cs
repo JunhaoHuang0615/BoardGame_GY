@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     public List<Tile> moveableTiles; //存储可移动的Tile
     public List<Tile> attackRangeTiles; //存储处于可攻击范围的格子
     public List<Unit> playerUnits;
+    public List<Unit> deadUnitList = new List<Unit>();
     public bool isAnimating; //动画进行中
 
     public Stack<Action> actions;
@@ -59,6 +60,22 @@ public class GameManager : MonoBehaviour
         GetEdgeTile();
         nowPlayerID = 1;
         nextTurnPlayerID = 2;
+        EventManager.AddEventListener<Unit>("UnitReturn",OnUnitReturn);
+    }
+
+    public IEnumerator WaitAnimation(Animator animator, String animName, Action onFinished = null, int animationStateInfo = 0)
+    {
+        animator.Play(animName);
+        while (!animator.GetCurrentAnimatorStateInfo(animationStateInfo).IsName(animName))
+        {
+            yield return null;
+        }
+        //判断当前动画是否已经完成
+        while (animator.GetCurrentAnimatorStateInfo(animationStateInfo).IsName(animName))
+        {
+            yield return null; //卡在动画播放
+        }
+        onFinished?.Invoke();
     }
     //取消选择的时候执行
     public void ResetMoveableRange()
@@ -188,5 +205,24 @@ public class GameManager : MonoBehaviour
         {
             tile.RestHightMovableTile();
         }
+        foreach(var unit in deadUnitList)
+        {
+            if (allUnits.Contains(unit))
+            {
+                allUnits.Remove(unit);
+            }
+            if (playerUnits.Contains(unit))
+            {
+                playerUnits.Remove(unit);
+            }
+            Destroy(unit.gameObject);
+        }
+        deadUnitList.Clear();
+    }
+
+    public void OnUnitReturn(Unit deadUnit)
+    {
+        deadUnitList.Add(deadUnit);
+        deadUnit.gameObject.SetActive(false);
     }
 }
