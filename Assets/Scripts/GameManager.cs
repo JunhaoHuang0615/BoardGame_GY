@@ -29,6 +29,7 @@ public class GameManager : MonoBehaviour
     //控制回合制系统
     public int nowPlayerID; //当前回合可操控的棋子
     public int nextTurnPlayerID; //下一回合可操控的棋子ID
+    public bool isDeadAnimationPlaying = false; //用于管理棋子的死亡动画是否结束
 
     //战斗系统相关
     public Unit activeUnit;
@@ -61,6 +62,12 @@ public class GameManager : MonoBehaviour
         nowPlayerID = 1;
         nextTurnPlayerID = 2;
         EventManager.AddEventListener<Unit>("UnitReturn",OnUnitReturn);
+        EventManager.AddEventListener("DeadAnimationPlaying",OnDeadAnimationPlaying);
+    }
+
+    public void OnDeadAnimationPlaying()
+    {
+        isDeadAnimationPlaying = true;
     }
 
     public IEnumerator WaitAnimation(Animator animator, String animName, Action onFinished = null, int animationStateInfo = 0)
@@ -142,10 +149,14 @@ public class GameManager : MonoBehaviour
 
         foreach(var ai in aiList)
         {
+            while (isDeadAnimationPlaying)
+            {
+                yield return null;
+            }
             this.selectedUnit = ai;
             ai.selected = true;
             //
-            while(ai.GetComponent<FSM>().GetCurrentState() != StateType.STAND)
+            while(ai.GetComponent<FSM>().GetCurrentState() != StateType.STAND && ai.GetComponent<FSM>().GetCurrentState() != StateType.FINISH)
             {
                 yield return null;
             }
@@ -224,5 +235,7 @@ public class GameManager : MonoBehaviour
     {
         deadUnitList.Add(deadUnit);
         deadUnit.gameObject.SetActive(false);
+
+        isDeadAnimationPlaying = false;
     }
 }
