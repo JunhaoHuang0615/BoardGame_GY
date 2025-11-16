@@ -1,0 +1,20 @@
+{
+    "recommendations": [
+        // C# 开发必需扩展
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        // Unity 专用扩展
+        "kleber-swf.unity-code-snippets",
+        "tobiah.unity-tools",
+        "visualstudiotoolsforunity.vstuc",
+        // Unity 调试器
+        "unity.unity-debug",
+        // 代码格式化和美化
+        "editorconfig.editorconfig",
+        "kreativ-software.csharpextensions",
+        // 文件图标（可选但推荐）
+        "vscode-icons-team.vscode-icons",
+        // Git 支持（如果使用版本控制）
+        "eamodio.gitlens"
+    ]
+}
