@@ -53,13 +53,24 @@
         "Temp/": true
     },
     // Unity 和 C# 开发配置
-    "omnisharp.useModernNet": true,
+    "omnisharp.useModernNet": false,
     "omnisharp.enableRoslynAnalyzers": true,
     "omnisharp.enableEditorConfigSupport": true,
+    "omnisharp.enableAsyncCompletion": true,
+    "omnisharp.useGlobalMono": "never",
+    "omnisharp.path": "latest",
+    "omnisharp.projectLoadTimeout": 120,
     // C# 代码格式化
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.fixAll": "explicit"
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    // C# 语言服务配置
+    "[csharp]": {
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
     },
     // 文件关联
     "files.associations": {
@@ -74,5 +85,8 @@
         "**/Temp": true,
         "**/obj": true,
         "**/*.meta": true
-    }
+    },
+    "dotnet.defaultSolution": "BoardGame_GY.sln",
+    "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+    "dotnet.formatting.organizeImportsOnFormat": true
 }
