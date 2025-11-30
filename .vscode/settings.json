@@ -61,7 +61,7 @@
     "omnisharp.path": "latest",
     "omnisharp.projectLoadTimeout": 120,
     // C# 代码格式化
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": false,
     "editor.codeActionsOnSave": {
         "source.fixAll": "explicit",
         "source.organizeImports": "explicit"

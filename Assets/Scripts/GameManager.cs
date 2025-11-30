@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 
 public class GameManager : MonoBehaviour
-{   
+{
     public static GameManager Instance { get; private set; }
 
     public Unit selectedUnit;
@@ -26,9 +26,18 @@ public class GameManager : MonoBehaviour
     public Tile rightEdgeTile;
     public LayerMask tileLayer;
 
-    //控制回合制系统
-    public int nowPlayerID; //当前回合可操控的棋子
-    public int nextTurnPlayerID; //下一回合可操控的棋子ID
+    //控制回合制系统（旧系统，已注释，保留以防需要）
+    //public int nowPlayerID; //当前回合可操控的棋子
+    //public int nextTurnPlayerID; //下一回合可操控的棋子ID
+
+    //行动值系统
+    public const float roundDistance = 10000f; //行动条总长度，类似星穹铁道的10000
+    public Unit currentActiveUnit; //当前可以行动的单位
+    public bool isProcessingTurn = false; //是否正在处理回合
+
+    //行动队列：按行动值排序，行动值大的在前（先行动）
+    private List<Unit> actionQueue = new List<Unit>();
+
     public bool isDeadAnimationPlaying = false; //用于管理棋子的死亡动画是否结束
 
     //战斗系统相关
@@ -59,8 +68,13 @@ public class GameManager : MonoBehaviour
             allUnits.Add(unit);
         }
         GetEdgeTile();
-        nowPlayerID = 1;
-        nextTurnPlayerID = 2;
+        //旧回合制系统初始化（已注释）
+        //nowPlayerID = 1;
+        //nextTurnPlayerID = 2;
+
+        //初始化行动值系统
+        InitializeActionValueSystem();
+
         EventManager.AddEventListener<Unit>("UnitReturn",OnUnitReturn);
         EventManager.AddEventListener("DeadAnimationPlaying",OnDeadAnimationPlaying);
     }
@@ -108,7 +122,7 @@ public class GameManager : MonoBehaviour
     public void EnablePlayerCollider(bool enable)
     {
         foreach(var player in playerUnits)
-        {   
+        {
             player.GetComponent<Collider2D>().enabled = enable;
         }
     }
@@ -130,12 +144,203 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if(nowPlayerID == 2)
+        //旧回合制系统（已注释）
+        //if(nowPlayerID == 2)
+        //{
+        //    StartCoroutine(AITurn());
+        //}
+
+        //行动值系统：检查是否有单位可以行动
+        //如果正在播放死亡动画，等待动画完成后再处理（类似原来AITurn的逻辑）
+        if (!isProcessingTurn && !isAnimating && !isDeadAnimationPlaying)
         {
-            StartCoroutine(AITurn());
+            ProcessActionValueTurn();
         }
     }
 
+    //初始化行动值系统
+    void InitializeActionValueSystem()
+    {
+        //清空行动队列
+        actionQueue.Clear();
+
+        foreach (Unit unit in allUnits)
+        {
+            if (unit.roundspeed <= 0)
+            {
+                unit.roundspeed = 100; //默认速度
+            }
+            //初始行动值设为0，让它们从同一起跑线开始累积
+            unit.currentActionValue = 0f;
+            //调用Idle()方法，设置单位进入idle状态（stand = false）
+            unit.Idle();
+        }
+    }
+
+    //处理行动值回合（基于队列系统，单线程管理）
+    public void ProcessActionValueTurn()
+    {
+        //如果正在处理回合，或者已经有单位在行动，直接返回，不累积也不选择
+        if (isProcessingTurn || currentActiveUnit != null)
+        {
+            return;
+        }
+
+        //累积所有单位的行动值（每帧累积一次，基于速度）
+        float deltaTime = Time.deltaTime;
+        float speedMultiplier = 200f; //速度倍数，用于调整累积速度
+
+        foreach (Unit unit in allUnits)
+        {
+            //累积行动值的条件：
+            //1. 单位活着
+            //2. 不是当前正在行动的单位（currentActiveUnit）
+            //3. 单位已完成上一回合（stand = true）可以累积
+            //4. 或者单位还没有达到行动值（currentActionValue < roundDistance）可以累积
+            if (unit != null && unit.health > 0 && unit != currentActiveUnit)
+            {
+                if (unit.stand || unit.currentActionValue < roundDistance)
+                {
+                    unit.currentActionValue += unit.roundspeed * deltaTime * speedMultiplier;
+                }
+            }
+        }
+
+        //更新行动队列：将达到阈值的单位加入队列
+        UpdateActionQueue();
+
+        //如果队列不为空，处理队列头部的单位（每次只处理一个）
+        //关键：在检查队列之前，确保没有单位在行动
+        if (actionQueue.Count > 0)
+        {
+            //再次检查，确保没有单位在行动（双重保险）
+            if (currentActiveUnit != null || isProcessingTurn)
+            {
+                return;
+            }
+
+            //队列按行动值从大到小排序，取第一个
+            Unit nextUnit = actionQueue[0];
+            actionQueue.RemoveAt(0); //从队列移除
+
+            //设置标志，开始处理单位行动
+            isProcessingTurn = true;
+            currentActiveUnit = nextUnit;
+
+            //直接处理单位行动（不使用协程）
+            HandleUnitTurn(nextUnit);
+        }
+    }
+
+    //更新行动队列：将达到阈值的单位加入队列（如果还没在队列中）
+    private void UpdateActionQueue()
+    {
+        foreach (Unit unit in allUnits)
+        {
+            //检查条件：
+            //1. 单位活着
+            //2. 不是当前正在行动的单位（currentActiveUnit）
+            //3. 行动值达到要求（currentActionValue >= roundDistance）
+            //4. 还没在队列中
+            if (unit != null && unit.health > 0 &&
+                unit != currentActiveUnit &&
+                unit.currentActionValue >= roundDistance &&
+                !actionQueue.Contains(unit))
+            {
+                actionQueue.Add(unit);
+            }
+        }
+
+        //按行动值从大到小排序（行动值大的先行动）
+        actionQueue.Sort((a, b) => b.currentActionValue.CompareTo(a.currentActionValue));
+    }
+
+    //获取行动队列（用于调试和显示）
+    public List<Unit> GetActionQueue()
+    {
+        return new List<Unit>(actionQueue);
+    }
+
+    //处理单个单位的回合（不使用协程，单线程处理）
+    private void HandleUnitTurn(Unit unit)
+    {
+        //减少行动值（行动后扣除roundDistance）
+        unit.currentActionValue -= roundDistance;
+
+        //重置单位状态，允许行动
+        unit.hasMoved = false;
+        unit.hasAttacked = false;
+        //调用Idle()方法，设置单位进入idle状态（stand = false）
+        unit.Idle();
+
+        //如果是AI单位，触发AI开始行动
+        if (unit.playerID == 2)
+        {
+            //确保AI的FSM在IDLE状态
+            FSM aiFSM = unit.GetComponent<FSM>();
+            if (aiFSM == null)
+            {
+                Debug.LogError($"AI单位 {unit.name} 没有FSM组件！");
+                isProcessingTurn = false;
+                currentActiveUnit = null;
+                //继续处理下一个单位
+                ProcessActionValueTurn();
+                return;
+            }
+
+            if (aiFSM.GetCurrentState() != StateType.IDLE)
+            {
+                aiFSM.TransitionToState(StateType.IDLE);
+            }
+
+            //GM选择AI单位，设置selected = true，触发AI从IDLE转换到TARGETTING
+            selectedUnit = unit;
+            unit.selected = true;
+
+            //AI会自动完成行动，完成后会调用Stand()方法，Stand()中会继续处理下一个单位
+        }
+        //如果是玩家单位，自动选中并打开UI
+        else
+        {
+            //自动选中玩家单位并打开UI
+            ResetMoveableRange();
+            ResetMovePath();
+            EnablePlayerCollider(true);
+            unit.EnableGoodCollider(true);
+
+            //取消之前选中的单位
+            if (selectedUnit != null && selectedUnit != unit)
+            {
+                selectedUnit.CloseButtonList();
+                selectedUnit.CloseEquipmentList();
+                selectedUnit.selected = false;
+                selectedUnit.playerAnimator.SetAnimationParam(selectedUnit, 0, 0);
+            }
+
+            //选中当前单位
+            selectedUnit = unit;
+            unit.selected = true;
+            unit.OpenButtonList();
+
+            //显示移动范围或攻击范围
+            if (!unit.hasMoved)
+            {
+                unit.ShowMoveRangeTwo();
+            }
+            else if (!unit.hasAttacked)
+            {
+                unit.ShowAttackRange(unit.standOnTile);
+            }
+
+            unit.playerAnimator.SetAnimationParam(unit, 0, 0);
+
+            //玩家单位由玩家手动操作
+            //当玩家调用Stand()时，会继续处理下一个单位
+        }
+    }
+
+    //旧回合制系统（已注释，保留以防需要）
+    /*
     public IEnumerator AITurn()
     {
         List<Unit> aiList = new List<Unit>();
@@ -163,6 +368,7 @@ public class GameManager : MonoBehaviour
         }
         TurnEnd();
     }
+    */
 
     public void GetEdgeTile()
     {
@@ -199,8 +405,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    //旧回合制系统方法（已注释，保留以防需要）
+    /*
     public void TurnEnd()
-    {   
+    {
         //PlayerID交换
         int temp = nowPlayerID;
         nowPlayerID = nextTurnPlayerID;
@@ -230,6 +438,7 @@ public class GameManager : MonoBehaviour
         }
         deadUnitList.Clear();
     }
+    */
 
     public void OnUnitReturn(Unit deadUnit)
     {
@@ -237,5 +446,14 @@ public class GameManager : MonoBehaviour
         deadUnit.gameObject.SetActive(false);
 
         isDeadAnimationPlaying = false;
+
+        //如果死亡的单位是当前正在行动的单位，继续处理下一个单位
+        if (deadUnit == currentActiveUnit)
+        {
+            isProcessingTurn = false;
+            currentActiveUnit = null;
+            //继续处理下一个单位（会等待死亡动画完成，因为Update中检查了isDeadAnimationPlaying）
+            ProcessActionValueTurn();
+        }
     }
 }

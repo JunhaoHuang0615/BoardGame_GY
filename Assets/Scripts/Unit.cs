@@ -15,7 +15,7 @@ public enum CharacterType
 public class Unit : MonoBehaviour
 {
     //系统
-    public bool selected; 
+    public bool selected;
     //角色属性
     public int playerID;  //玩家ID
     public int health;
@@ -27,6 +27,10 @@ public class Unit : MonoBehaviour
     public int defenseAbility;
     public CharacterType type;
     public int flyHeight; //用于判定是否可以行走到某个格子
+    //行动值系统相关属性
+    public int roundspeed; //回合速度，决定行动顺序
+    public float currentActionValue; //当前行动值（累积值）
+
     //角色状态
     public bool hasMoved;
     public bool hasAttacked;
@@ -123,7 +127,7 @@ public class Unit : MonoBehaviour
     //这个事件要求gameobject挂载collider
     //object在Z轴方向上的位置
     private void OnMouseDown()
-    {   
+    {
         if(this.isAttackable == true && gm.selectedUnit !=null && gm.selectedUnit.canAttack == true)
         {
             gm.passiveUnit = this;
@@ -131,15 +135,34 @@ public class Unit : MonoBehaviour
             gm.selectedUnit.SwitchWeapon(gm.selectedUnit.hoverdWeapon);
             gm.selectedUnit.RecordAttackRangeTiles(gm.selectedUnit.standOnTile);//为了做攻击范围的记录
 
-
-            gm.activeUnit.Stand();
+            //行动值系统：不要在这里调用Stand()，因为战斗还没有开始
+            //Stand()应该在战斗完成后调用
+            //对于玩家单位，战斗完成后需要手动调用Stand()来结束回合
             StartCoroutine( sl.LoadBattleScene());
             CameraFollow.instance.RecordCameraPosition();
+
+            //启动协程等待战斗完成后再调用Stand()
+            StartCoroutine(WaitForBattleCompleteAndStand(gm.activeUnit));
         }
-        if(this.playerID != gm.nowPlayerID)
+
+        //行动值系统：检查是否是当前可以行动的单位
+        //只有玩家单位（playerID == 1）且是当前可行动单位才能被选择
+        if (playerID != 1)
         {
             return;
         }
+        //如果不是当前可行动单位，不能选择
+        if (gm.currentActiveUnit != this)
+        {
+            return;
+        }
+
+        //旧回合制系统检查（已注释）
+        //if(this.playerID != gm.nowPlayerID)
+        //{
+        //    return;
+        //}
+
         if(this.stand == true)
         {
             return;
@@ -157,7 +180,7 @@ public class Unit : MonoBehaviour
 
         //取消选择
         if (selected == true && gm.selectedUnit == this)
-        {   
+        {
             selected = false;
             gm.selectedUnit = null;
 
@@ -165,7 +188,7 @@ public class Unit : MonoBehaviour
         //当前的Unit没有被选择，但是有其他被选择的Unit
         else if (selected == false && gm.selectedUnit != null)
         {
-           
+
             gm.selectedUnit.CloseButtonList();
             gm.selectedUnit.CloseEquipmentList();
             gm.selectedUnit.selected = false;
@@ -183,7 +206,7 @@ public class Unit : MonoBehaviour
 
         }
         else if (!selected && gm.selectedUnit == null)
-        {   
+        {
             selected = true;
             gm.selectedUnit = this;
             //ShowMoveRange();
@@ -240,7 +263,7 @@ public class Unit : MonoBehaviour
         switch (this.hoverdWeapon.range_pattern)
         {
             case "Mele": //近战
-                this.FloodAttackRange(attackTile); 
+                this.FloodAttackRange(attackTile);
                 break;
 
             case "Ten": //十字攻击
@@ -285,7 +308,7 @@ public class Unit : MonoBehaviour
             Vector2 direct = directions[directIndex];
             int range = (direct.x == 0) ? ver : hor;
             Tile currentTile = attackTile; //格子的起始点，一定是attackTile
-            for (int i = 0; i < range; i++) { 
+            for (int i = 0; i < range; i++) {
                 Tile nextTile = currentTile.GetNeighborTilesWithDirection(direct); //直接拿到方向上的临边格子
 
                 if(nextTile == null) break; // 说明已经到了地图边缘
@@ -473,7 +496,7 @@ public class Unit : MonoBehaviour
             //对每一个Neighbor进行衡量，决定是否可以有水流过去
             foreach(var neighbor in currentTileNeighbors)
             {
- 
+
                 if(RemainMoveRange >= neighbor.GetNeedMoveAbility(gm.selectedUnit))
                 {
                     //可以流入水
@@ -489,7 +512,7 @@ public class Unit : MonoBehaviour
                     Flood(RemainMoveRange - neighbor.GetNeedMoveAbility(gm.selectedUnit), neighbor);
 
                 }
-                
+
             }
         }
     }
@@ -600,7 +623,7 @@ public class Unit : MonoBehaviour
     }
 
     public void ShowAttackRangeInMoveRange(List<Tile> moveRangeList)
-    {   
+    {
         if(gm.attackRangeTiles.Count > 0)
         {
             gm.attackRangeTiles.Clear();
@@ -653,7 +676,11 @@ public class Unit : MonoBehaviour
         transform.position = new Vector3(transform.position.x, transform.position.y, -1);
         EnableGoodCollider(true);
         this.hasMoved = true;
-        OpenButtonList();
+        //只有玩家单位才打开UI，AI单位不应该打开UI
+        if (playerID == 1)
+        {
+            OpenButtonList();
+        }
         previousStandTile.UnitOnTile();
         ShowAttackRange(this.standOnTile);
         Action moveAction = new Action(ResetUnitPosition);
@@ -663,6 +690,11 @@ public class Unit : MonoBehaviour
     }
     public void OpenButtonList()
     {
+        //只有玩家单位才能打开UI，AI单位不应该打开UI
+        if (playerID != 1)
+        {
+            return;
+        }
         if (buttonList.buttons.Count > 0)
         {
             return;
@@ -690,15 +722,15 @@ public class Unit : MonoBehaviour
             buttonList.AddButton(GameObjectType.ATTACKBUTTON);
         }
         if(!hasAttacked || !hasMoved)
-        {   
+        {
             buttonList.AddButton(GameObjectType.STANDBUTTON);
         }
     }
 
     public void ResetUnitPosition()
-    {   
+    {
         if(this.stand == true)
-        {   
+        {
             if(gm.actions.Count > 0)
             {
                 Action action = gm.actions.Pop();
@@ -764,15 +796,74 @@ public class Unit : MonoBehaviour
         }
         this.selected = false;
         this.playerAnimator.SetAnimationParam(this, 0, 0);
+
+        //行动值系统：结束回合后，继续处理下一个回合
+        if (gm.currentActiveUnit == this)
+        {
+            gm.isProcessingTurn = false;
+            gm.currentActiveUnit = null;
+            //继续处理下一个回合
+            gm.ProcessActionValueTurn();
+        }
     }
 
     public void Idle()
     {
-        playerAnimator.SetAnimationParam(this,0,0);
+        //如果playerAnimator还没有初始化，先尝试获取
+        if (playerAnimator == null)
+        {
+            playerAnimator = GetComponent<PlayerAnimator>();
+        }
+        //如果playerAnimator存在，设置动画参数
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetAnimationParam(this, 0, 0);
+        }
         this.hasMoved = false;
         this.hasAttacked = false;
         this.selected = false;
         this.stand = false;
+    }
+
+    //等待战斗完成后再调用Stand()
+    private IEnumerator WaitForBattleCompleteAndStand(Unit unit)
+    {
+        //等待战斗场景加载完成（BattleHandler.Start()会被调用，设置isAttacking = true）
+        //场景加载需要时间，所以先等待一段时间
+        yield return new WaitForSeconds(3.5f); //等待场景加载和淡入动画完成（LoadBattleScene中有3秒等待）
+
+        //等待战斗开始（isAttacking变成true）
+        //设置超时时间，避免无限等待
+        float waitTime = 0f;
+        float maxWaitTime = 5f;
+        while (!unit.isAttacking && waitTime < maxWaitTime)
+        {
+            waitTime += Time.deltaTime;
+            yield return null;
+        }
+
+        //如果超时还没开始战斗，可能是战斗场景加载失败，直接返回
+        if (!unit.isAttacking)
+        {
+            Debug.LogWarning($"单位 {unit.name} 等待战斗开始超时，可能战斗场景加载失败");
+            yield break;
+        }
+
+        //等待战斗完成（isAttacking变成false）
+        while (unit.isAttacking)
+        {
+            yield return null;
+        }
+
+        //战斗完成后，等待一小段时间确保战斗场景完全卸载
+        yield return new WaitForSeconds(0.2f);
+
+        //战斗完成后，调用Stand()来结束回合
+        //但只有当前单位是currentActiveUnit时才调用，避免重复调用
+        if (gm.currentActiveUnit == unit && !unit.stand)
+        {
+            unit.Stand();
+        }
     }
 
     public void SwitchWeapon(Weapon weapon)
@@ -843,6 +934,6 @@ public class Unit : MonoBehaviour
         }
 
         this.health -= (int)damage;
-    
+
     }
 }

@@ -26,12 +26,18 @@ public class StandState : AIStates
 
     public void OnUpdate()
     {
-        //AI回合结束的时候，进入IDLE
-        if (GameManager.Instance.nowPlayerID == 1)
+        //行动值系统：AI完成行动后，如果不再是当前可行动单位，切换到IDLE
+        //当currentActiveUnit不是当前单位时，说明该AI已经完成了行动，可以回到IDLE状态
+        if (GameManager.Instance.currentActiveUnit != this.aiUnit)
         {
             this.fsm.TransitionToState(StateType.IDLE);
         }
 
+        //旧回合制系统（已注释）
+        //if (GameManager.Instance.nowPlayerID == 1)
+        //{
+        //    this.fsm.TransitionToState(StateType.IDLE);
+        //}
     }
 
 

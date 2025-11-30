@@ -1,0 +1,25 @@
+root = true
+
+# 强制使用C# 9.0，Unity 2019.4兼容
+[*.cs]
+csharp_language_version = 9.0
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = false
+csharp_style_var_elsewhere = false
+
+# 禁用集合表达式等C# 12特性
+csharp_style_collection_expression = false
+
+# 代码格式化设置
+indent_size = 4
+indent_style = space
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+
+
+
+
+
+

@@ -23,6 +23,7 @@ public class CameraFollow : MonoBehaviour
     }
     private void Update()
     {
+        
         UpdateCameraPosition();
         EdgeMoveMent();
     }
@@ -72,7 +73,7 @@ public class CameraFollow : MonoBehaviour
         //向右移动
         if(Input.mousePosition.x > Screen.width - edgeSize)
         {
-            currentPosition.x += moveamout * Time.deltaTime; 
+            currentPosition.x += moveamout * Time.deltaTime;
         }
         //向左移动
         if (Input.mousePosition.x < edgeSize)
