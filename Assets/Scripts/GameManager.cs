@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 
 public class GameManager : MonoBehaviour
@@ -77,6 +78,9 @@ public class GameManager : MonoBehaviour
 
         EventManager.AddEventListener<Unit>("UnitReturn",OnUnitReturn);
         EventManager.AddEventListener("DeadAnimationPlaying",OnDeadAnimationPlaying);
+
+        //创建行动顺序UI
+        StartCoroutine(CreateActionOrderUICoroutine());
     }
 
     public void OnDeadAnimationPlaying()
@@ -259,6 +263,102 @@ public class GameManager : MonoBehaviour
     public List<Unit> GetActionQueue()
     {
         return new List<Unit>(actionQueue);
+    }
+
+    //获取所有单位的行动信息（用于UI显示）
+    //返回按"下一个要行动的顺序"排序的单位列表
+    //排序规则：从左到右排列
+    // - 最左边：第三个要行动的（或更后面的）
+    // - 中间：下一个要行动的
+    // - 最右边：当前正在行动的单位
+    public List<Unit> GetAllUnitsSortedByActionValue()
+    {
+        List<Unit> sortedUnits = new List<Unit>();
+        Unit currentUnit = null;
+
+        foreach (Unit unit in allUnits)
+        {
+            if (unit != null && unit.health > 0)
+            {
+                if (unit == currentActiveUnit)
+                {
+                    //当前行动的单位单独保存
+                    currentUnit = unit;
+                }
+                else
+                {
+                    sortedUnits.Add(unit);
+                }
+            }
+        }
+
+        //其他单位按"下一个要行动的顺序"排序（从小到大，即下一个要行动的排在前面）
+        //排序规则：
+        //1. 已经达到行动值的单位，按行动值从大到小排序（行动值大的先行动）
+        //2. 还没达到行动值的单位，按"谁先达到行动值"排序（先达到的排在前面）
+        sortedUnits.Sort((a, b) =>
+        {
+            bool aReady = a.currentActionValue >= roundDistance;
+            bool bReady = b.currentActionValue >= roundDistance;
+
+            if (aReady && bReady)
+            {
+                //都达到了，按行动值从大到小排序（行动值大的先行动）
+                //这与UpdateActionQueue的排序逻辑一致
+                return b.currentActionValue.CompareTo(a.currentActionValue);
+            }
+            else if (aReady && !bReady)
+            {
+                //a达到了，b没达到，a排在前面（已经达到的优先）
+                return -1;
+            }
+            else if (!aReady && bReady)
+            {
+                //a没达到，b达到了，b排在前面
+                return 1;
+            }
+            else
+            {
+                //都没达到，按"谁先达到行动值"排序
+                //计算还需要的行动值
+                float aRemaining = roundDistance - a.currentActionValue;
+                float bRemaining = roundDistance - b.currentActionValue;
+
+                //按"还需要多少时间"排序：剩余行动值 / 速度
+                //时间越短，越先达到，应该排在前面
+                float aTimeNeeded = aRemaining / a.roundspeed;
+                float bTimeNeeded = bRemaining / b.roundspeed;
+
+                int timeCompare = aTimeNeeded.CompareTo(bTimeNeeded);
+                if (timeCompare != 0)
+                {
+                    return timeCompare; //时间短的排在前面
+                }
+
+                //如果时间相同，按速度从大到小排序（速度快的优先）
+                return b.roundspeed.CompareTo(a.roundspeed);
+            }
+        });
+
+        //现在sortedUnits的顺序是：下一个要行动的 -> 下下个要行动的 -> 下下下个要行动的 -> ...
+        //我们需要反转顺序，让：下下下个要行动的 -> 下下个要行动的 -> 下一个要行动的
+        sortedUnits.Reverse();
+
+        //当前行动的单位放在最右边（列表末尾，因为HorizontalLayoutGroup从左到右排列）
+        if (currentUnit != null)
+        {
+            sortedUnits.Add(currentUnit);
+        }
+
+        //最终顺序：第三个要行动的 -> 下一个要行动的 -> 当前要行动的
+        return sortedUnits;
+    }
+
+    //获取单位的行动值百分比（0-1）
+    public float GetUnitActionValuePercent(Unit unit)
+    {
+        if (unit == null) return 0f;
+        return Mathf.Clamp01(unit.currentActionValue / roundDistance);
     }
 
     //处理单个单位的回合（不使用协程，单线程处理）
@@ -455,5 +555,66 @@ public class GameManager : MonoBehaviour
             //继续处理下一个单位（会等待死亡动画完成，因为Update中检查了isDeadAnimationPlaying）
             ProcessActionValueTurn();
         }
+    }
+
+    //行动顺序UI相关
+    private ActionOrderUI actionOrderUI;
+
+    //创建行动顺序UI（使用协程确保在下一帧创建，此时所有单位已初始化）
+    private IEnumerator CreateActionOrderUICoroutine()
+    {
+        yield return null; //等待一帧，确保所有单位都已初始化
+
+        //查找或创建Canvas
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null)
+        {
+            //如果没有Canvas，创建一个
+            GameObject canvasObj = new GameObject("Canvas");
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObj.AddComponent<CanvasScaler>();
+            canvasObj.AddComponent<GraphicRaycaster>();
+            Debug.Log("创建了新的Canvas");
+        }
+
+        //创建ActionOrderUI对象
+        GameObject uiObj = new GameObject("ActionOrderUI");
+        uiObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform uiRect = uiObj.AddComponent<RectTransform>();
+        uiRect.anchorMin = new Vector2(0, 1);
+        uiRect.anchorMax = new Vector2(1, 1);
+        uiRect.pivot = new Vector2(0.5f, 1);
+        uiRect.anchoredPosition = Vector2.zero;
+        uiRect.sizeDelta = new Vector2(0, 100);
+
+        //添加ActionOrderUI组件
+        actionOrderUI = uiObj.AddComponent<ActionOrderUI>();
+
+        //创建内容容器
+        GameObject contentObj = new GameObject("Content");
+        contentObj.transform.SetParent(uiObj.transform, false);
+
+        RectTransform contentRect = contentObj.AddComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0.5f, 1);
+        contentRect.anchorMax = new Vector2(0.5f, 1);
+        contentRect.pivot = new Vector2(0.5f, 1);
+        contentRect.anchoredPosition = new Vector2(0, -10);
+        contentRect.sizeDelta = new Vector2(2000, 90);
+
+        //添加水平布局组件
+        HorizontalLayoutGroup layout = contentObj.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 10f;
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        layout.childAlignment = TextAnchor.UpperCenter;
+
+        //设置ActionOrderUI的contentParent
+        actionOrderUI.SetContentParent(contentObj.transform);
+
+        Debug.Log($"行动顺序UI已创建！单位数量: {allUnits.Count}");
     }
 }
