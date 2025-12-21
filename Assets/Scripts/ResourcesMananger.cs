@@ -55,8 +55,8 @@ public class ResourcesMananger : MonoBehaviour
         if (weaponImageCache.ContainsKey(imagePath))
         {
 
-            return weaponImageCache[imagePath]; 
-        
+            return weaponImageCache[imagePath];
+
         }
         Texture2D weaponTexture = Resources.Load<Texture2D>(imagePath);
         if (weaponTexture != null) {
