@@ -310,11 +310,37 @@ public class ActionOrderUI : MonoBehaviour
 
         //使用字典来跟踪每个单位对应的槽位
         Dictionary<Unit, ActionOrderSlot> unitToSlotMap = new Dictionary<Unit, ActionOrderSlot>();
+        List<ActionOrderSlot> slotsToRemove = new List<ActionOrderSlot>();
+
         foreach (var slot in slots)
         {
             if (slot != null && slot.currentUnit != null)
             {
-                unitToSlotMap[slot.currentUnit] = slot;
+                //检查单位是否死亡
+                if (slot.currentUnit.health <= 0)
+                {
+                    //单位已死亡，标记为需要移除
+                    slotsToRemove.Add(slot);
+                }
+                else
+                {
+                    unitToSlotMap[slot.currentUnit] = slot;
+                }
+            }
+            else if (slot != null)
+            {
+                //槽位没有关联单位，也需要移除
+                slotsToRemove.Add(slot);
+            }
+        }
+
+        //销毁死亡单位的UI槽位
+        foreach (var slotToRemove in slotsToRemove)
+        {
+            slots.Remove(slotToRemove);
+            if (slotToRemove != null && slotToRemove.gameObject != null)
+            {
+                Destroy(slotToRemove.gameObject);
             }
         }
 
