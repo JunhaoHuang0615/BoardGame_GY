@@ -341,16 +341,19 @@ public class GameManager : MonoBehaviour
         });
 
         //现在sortedUnits的顺序是：下一个要行动的 -> 下下个要行动的 -> 下下下个要行动的 -> ...
-        //我们需要反转顺序，让：下下下个要行动的 -> 下下个要行动的 -> 下一个要行动的
-        sortedUnits.Reverse();
+        //对于纵向布局（从上到下）：
+        // - 最上面应该是当前行动的
+        // - 然后是下一个要行动的
+        // - 最下面是最后行动的
+        //所以不需要反转，直接按这个顺序，然后把当前单位放在最前面
 
-        //当前行动的单位放在最右边（列表末尾，因为HorizontalLayoutGroup从左到右排列）
+        //当前行动的单位放在最上面（列表开头，因为VerticalLayoutGroup从上到下排列）
         if (currentUnit != null)
         {
-            sortedUnits.Add(currentUnit);
+            sortedUnits.Insert(0, currentUnit);
         }
 
-        //最终顺序：第三个要行动的 -> 下一个要行动的 -> 当前要行动的
+        //最终顺序：当前要行动的 -> 下一个要行动的 -> 下下个要行动的 -> ... -> 最后要行动的
         return sortedUnits;
     }
 
@@ -565,6 +568,15 @@ public class GameManager : MonoBehaviour
     {
         yield return null; //等待一帧，确保所有单位都已初始化
 
+        //先检查是否已经存在 ActionOrderUI
+        ActionOrderUI existingUI = FindObjectOfType<ActionOrderUI>();
+        if (existingUI != null)
+        {
+            actionOrderUI = existingUI;
+            Debug.Log("ActionOrderUI 已存在，使用现有实例");
+            yield break;
+        }
+
         //查找或创建Canvas
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null)
@@ -583,11 +595,11 @@ public class GameManager : MonoBehaviour
         uiObj.transform.SetParent(canvas.transform, false);
 
         RectTransform uiRect = uiObj.AddComponent<RectTransform>();
-        uiRect.anchorMin = new Vector2(0, 1);
-        uiRect.anchorMax = new Vector2(1, 1);
-        uiRect.pivot = new Vector2(0.5f, 1);
+        uiRect.anchorMin = new Vector2(0, 0);
+        uiRect.anchorMax = new Vector2(0, 1);
+        uiRect.pivot = new Vector2(0, 1);
         uiRect.anchoredPosition = Vector2.zero;
-        uiRect.sizeDelta = new Vector2(0, 100);
+        uiRect.sizeDelta = new Vector2(220, 0);
 
         //添加ActionOrderUI组件
         actionOrderUI = uiObj.AddComponent<ActionOrderUI>();
@@ -597,20 +609,20 @@ public class GameManager : MonoBehaviour
         contentObj.transform.SetParent(uiObj.transform, false);
 
         RectTransform contentRect = contentObj.AddComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0.5f, 1);
-        contentRect.anchorMax = new Vector2(0.5f, 1);
-        contentRect.pivot = new Vector2(0.5f, 1);
-        contentRect.anchoredPosition = new Vector2(0, -10);
-        contentRect.sizeDelta = new Vector2(2000, 90);
+        contentRect.anchorMin = new Vector2(0f, 1);
+        contentRect.anchorMax = new Vector2(0f, 1);
+        contentRect.pivot = new Vector2(0f, 1);
+        contentRect.anchoredPosition = new Vector2(10, -10);
+        contentRect.sizeDelta = new Vector2(200, 2000);
 
-        //添加水平布局组件
-        HorizontalLayoutGroup layout = contentObj.AddComponent<HorizontalLayoutGroup>();
+        //添加垂直布局组件
+        VerticalLayoutGroup layout = contentObj.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10f;
         layout.childControlWidth = false;
         layout.childControlHeight = false;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
-        layout.childAlignment = TextAnchor.UpperCenter;
+        layout.childAlignment = TextAnchor.UpperLeft;
 
         //设置ActionOrderUI的contentParent
         actionOrderUI.SetContentParent(contentObj.transform);

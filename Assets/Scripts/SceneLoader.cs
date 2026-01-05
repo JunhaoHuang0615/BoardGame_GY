@@ -10,8 +10,23 @@ public class SceneLoader : MonoBehaviour
     public Animator transition;
     private void Awake()
     {
+        // 防止重复创建实例
+        if (Instance != null && Instance != this)
+        {
+            // 如果已存在的实例仍然有效，销毁当前对象
+            Destroy(gameObject);
+            return;
+        }
+
+        // 如果 Instance 已经等于 this，说明之前已经初始化过了，直接返回
+        // 这可以避免重复调用 DontDestroyOnLoad
+        if (Instance == this)
+        {
+            return;
+        }
+
         Instance = this;
-        DontDestroyOnLoad(this);
+        DontDestroyOnLoad(gameObject);
     }
 
     public void StartBattle()
@@ -24,9 +39,9 @@ public class SceneLoader : MonoBehaviour
         PlayFadeInAnimation();
         yield return new WaitForSeconds(3f);
         SceneManager.LoadSceneAsync("BattleScene", LoadSceneMode.Additive);
-        
+
         PlayFadeOutAnimation();
-        
+
     }
 
     //卸载战斗场景

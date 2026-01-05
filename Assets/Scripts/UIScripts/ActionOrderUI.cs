@@ -20,12 +20,29 @@ public class ActionOrderUI : MonoBehaviour
 
     private void Awake()
     {
+        // 尝试获取 GameManager，如果还没有初始化则稍后重试
         gm = GameManager.Instance;
     }
 
     private void Start()
     {
-        //初始化UI
+        // 延迟初始化，确保 GameManager 已经初始化
+        StartCoroutine(DelayedInitializeUI());
+    }
+
+    private IEnumerator DelayedInitializeUI()
+    {
+        // 等待 GameManager 初始化完成
+        while (gm == null)
+        {
+            gm = GameManager.Instance;
+            if (gm == null)
+            {
+                yield return null; // 等待一帧后重试
+            }
+        }
+
+        // 初始化UI
         InitializeUI();
     }
 
@@ -38,6 +55,15 @@ public class ActionOrderUI : MonoBehaviour
     //自动创建内容容器
     private void CreateContentParent()
     {
+        //先检查是否已经存在名为 "Content" 的子对象
+        Transform existingContent = transform.Find("Content");
+        if (existingContent != null)
+        {
+            contentParent = existingContent;
+            Debug.Log("ActionOrderUI: 发现已存在的 Content 对象，使用它作为 contentParent");
+            return;
+        }
+
         //创建内容容器
         GameObject contentObj = new GameObject("Content");
         contentObj.transform.SetParent(transform);
@@ -45,29 +71,40 @@ public class ActionOrderUI : MonoBehaviour
         RectTransform contentRect = contentObj.AddComponent<RectTransform>();
         contentParent = contentRect;
 
-        //设置锚点到顶部居中
-        contentRect.anchorMin = new Vector2(0.5f, 1f);
-        contentRect.anchorMax = new Vector2(0.5f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-        contentRect.anchoredPosition = new Vector2(0, -20);
-        contentRect.sizeDelta = new Vector2(2000, 100);
+        //设置锚点到左侧顶部（垂直排列）
+        contentRect.anchorMin = new Vector2(0f, 1f);
+        contentRect.anchorMax = new Vector2(0f, 1f);
+        contentRect.pivot = new Vector2(0f, 1f);
+        contentRect.anchoredPosition = new Vector2(10, -10);
+        contentRect.sizeDelta = new Vector2(200, 2000);
 
-        //添加水平布局组件
-        HorizontalLayoutGroup layout = contentObj.AddComponent<HorizontalLayoutGroup>();
+        //添加垂直布局组件
+        VerticalLayoutGroup layout = contentObj.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10f;
         layout.childControlWidth = false;
         layout.childControlHeight = false;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
+        layout.childAlignment = TextAnchor.UpperLeft;
     }
 
     //初始化UI
     private void InitializeUI()
     {
+        // 如果 contentParent 为 null，先尝试查找已存在的 Content 对象
         if (contentParent == null)
         {
-            Debug.LogError("ActionOrderUI: contentParent 未设置！");
-            return;
+            Transform existingContent = transform.Find("Content");
+            if (existingContent != null)
+            {
+                contentParent = existingContent;
+                Debug.Log("ActionOrderUI: 找到已存在的 Content 对象，使用它作为 contentParent");
+            }
+            else
+            {
+                Debug.LogWarning("ActionOrderUI: contentParent 未设置，正在自动创建...");
+                CreateContentParent();
+            }
         }
 
         if (gm == null)
@@ -153,8 +190,8 @@ public class ActionOrderUI : MonoBehaviour
         //尝试使用Unity默认字体
         if (nameText.font == null)
         {
-            //如果没有默认字体，尝试加载Arial
-            Font defaultFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            //如果没有默认字体，尝试加载LegacyRuntime字体
+            Font defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (defaultFont != null)
             {
                 nameText.font = defaultFont;
@@ -203,8 +240,8 @@ public class ActionOrderUI : MonoBehaviour
         //尝试使用Unity默认字体
         if (valueText.font == null)
         {
-            //如果没有默认字体，尝试加载Arial
-            Font defaultFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            //如果没有默认字体，尝试加载LegacyRuntime字体
+            Font defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (defaultFont != null)
             {
                 valueText.font = defaultFont;
