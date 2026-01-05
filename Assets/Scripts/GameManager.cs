@@ -572,8 +572,18 @@ public class GameManager : MonoBehaviour
         ActionOrderUI existingUI = FindObjectOfType<ActionOrderUI>();
         if (existingUI != null)
         {
+            //如果已存在，更新其位置到屏幕左侧
+            RectTransform existingRect = existingUI.GetComponent<RectTransform>();
+            if (existingRect != null)
+            {
+                existingRect.anchorMin = new Vector2(0, 0);
+                existingRect.anchorMax = new Vector2(0, 1);
+                existingRect.pivot = new Vector2(0, 1);
+                existingRect.anchoredPosition = new Vector2(10, -10);
+                existingRect.sizeDelta = new Vector2(220, 0);
+                Debug.Log("ActionOrderUI 已存在，已更新位置到屏幕左侧");
+            }
             actionOrderUI = existingUI;
-            Debug.Log("ActionOrderUI 已存在，使用现有实例");
             yield break;
         }
 
@@ -589,16 +599,28 @@ public class GameManager : MonoBehaviour
             canvasObj.AddComponent<GraphicRaycaster>();
             Debug.Log("创建了新的Canvas");
         }
+        else
+        {
+            //确保Canvas的RenderMode是ScreenSpaceOverlay，这样UI位置计算才正确
+            if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                Debug.Log("已将Canvas的RenderMode设置为ScreenSpaceOverlay");
+            }
+        }
 
         //创建ActionOrderUI对象
         GameObject uiObj = new GameObject("ActionOrderUI");
         uiObj.transform.SetParent(canvas.transform, false);
 
         RectTransform uiRect = uiObj.AddComponent<RectTransform>();
+        //设置锚点到左侧，从顶部到底部
         uiRect.anchorMin = new Vector2(0, 0);
         uiRect.anchorMax = new Vector2(0, 1);
         uiRect.pivot = new Vector2(0, 1);
-        uiRect.anchoredPosition = Vector2.zero;
+        //设置位置：距离左边10像素，距离顶部-10像素（向下偏移10像素）
+        uiRect.anchoredPosition = new Vector2(10, -10);
+        //设置尺寸：宽度220，高度填满（0表示使用锚点）
         uiRect.sizeDelta = new Vector2(220, 0);
 
         //添加ActionOrderUI组件
