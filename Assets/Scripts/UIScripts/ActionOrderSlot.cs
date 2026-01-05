@@ -65,7 +65,9 @@ public class ActionOrderSlot : MonoBehaviour
         float actionPercent = gm.GetUnitActionValuePercent(unit);
         if (actionBarFill != null)
         {
-            actionBarFill.fillAmount = actionPercent;
+            //UI进度条限制在0-1之间，但允许显示超过100%的情况
+            //超过100%时，进度条填满，但数值文本会显示实际值（如120/100）
+            actionBarFill.fillAmount = Mathf.Clamp01(actionPercent);
         }
 
         //更新行动值文本

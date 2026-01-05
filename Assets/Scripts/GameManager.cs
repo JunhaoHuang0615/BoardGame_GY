@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
     //public int nextTurnPlayerID; //下一回合可操控的棋子ID
 
     //行动值系统
-    public const float roundDistance = 10000f; //行动条总长度，类似星穹铁道的10000
+    public const float roundDistance = 100f; //行动条总长度
     public Unit currentActiveUnit; //当前可以行动的单位
     public bool isProcessingTurn = false; //是否正在处理回合
 
@@ -192,21 +192,20 @@ public class GameManager : MonoBehaviour
 
         //累积所有单位的行动值（每帧累积一次，基于速度）
         float deltaTime = Time.deltaTime;
-        float speedMultiplier = 200f; //速度倍数，用于调整累积速度
+        //调整速度倍数：原来10000时用200，现在100应该用2（按比例缩小100倍）
+        float speedMultiplier = 2f; //速度倍数，用于调整累积速度
 
         foreach (Unit unit in allUnits)
         {
             //累积行动值的条件：
             //1. 单位活着
             //2. 不是当前正在行动的单位（currentActiveUnit）
-            //3. 单位已完成上一回合（stand = true）可以累积
-            //4. 或者单位还没有达到行动值（currentActionValue < roundDistance）可以累积
+            //3. 星穹铁道机制：只要不在行动，就继续累积，允许超过100
+            //   这样速度快的单位可以超过100，用于排序（超过100的部分决定谁先行动）
             if (unit != null && unit.health > 0 && unit != currentActiveUnit)
             {
-                if (unit.stand || unit.currentActionValue < roundDistance)
-                {
-                    unit.currentActionValue += unit.roundspeed * deltaTime * speedMultiplier;
-                }
+                //只要不是当前行动的单位，就继续累积（不管是否达到100）
+                unit.currentActionValue += unit.roundspeed * deltaTime * speedMultiplier;
             }
         }
 
@@ -357,11 +356,13 @@ public class GameManager : MonoBehaviour
         return sortedUnits;
     }
 
-    //获取单位的行动值百分比（0-1）
+    //获取单位的行动值百分比（允许超过1.0，用于UI显示）
     public float GetUnitActionValuePercent(Unit unit)
     {
         if (unit == null) return 0f;
-        return Mathf.Clamp01(unit.currentActionValue / roundDistance);
+        //允许超过100%，用于UI显示（可以显示为超过100%的进度条）
+        //UI显示时会限制在1.0以内，但这里返回实际值用于排序和显示
+        return unit.currentActionValue / roundDistance;
     }
 
     //处理单个单位的回合（不使用协程，单线程处理）

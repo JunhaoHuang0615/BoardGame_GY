@@ -247,7 +247,7 @@ public class ActionOrderUI : MonoBehaviour
                 valueText.font = defaultFont;
             }
         }
-        valueText.text = "0/10000"; //设置默认文本
+        valueText.text = "0/100"; //设置默认文本
         valueText.fontSize = 12;
         valueText.alignment = TextAnchor.MiddleCenter;
         valueText.color = Color.white;
