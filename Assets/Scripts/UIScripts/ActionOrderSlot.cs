@@ -70,10 +70,12 @@ public class ActionOrderSlot : MonoBehaviour
             actionBarFill.fillAmount = Mathf.Clamp01(actionPercent);
         }
 
-        //更新行动值文本
+        //更新行动值文本（星穹铁道机制）
         if (actionValueText != null)
         {
-            actionValueText.text = $"{unit.currentActionValue:F0}/{GameManager.roundDistance:F0}";
+            int effectiveSpeed = unit.GetEffectiveRoundSpeed();
+            float singleActionValue = GameManager.baseActionValue / effectiveSpeed;
+            actionValueText.text = $"{unit.currentActionValue:F0}/{singleActionValue:F0}";
             if (!actionValueText.enabled)
             {
                 actionValueText.enabled = true;
@@ -92,12 +94,12 @@ public class ActionOrderSlot : MonoBehaviour
             highlightFrame.SetActive(isCurrent);
         }
 
-        //设置颜色（根据是否达到行动值）
+        //设置颜色（根据是否达到行动值，星穹铁道机制：行动值 <= 0 可以行动）
         if (actionBarFill != null)
         {
-            if (unit.currentActionValue >= GameManager.roundDistance)
+            if (unit.currentActionValue <= 0f)
             {
-                //达到行动值，显示绿色
+                //达到行动值（<=0），显示绿色
                 actionBarFill.color = Color.green;
             }
             else

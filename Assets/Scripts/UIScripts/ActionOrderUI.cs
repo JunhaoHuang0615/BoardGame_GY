@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 
 public class ActionOrderUI : MonoBehaviour
 {
@@ -292,8 +293,58 @@ public class ActionOrderUI : MonoBehaviour
             return;
         }
 
-        //获取按行动值排序的单位列表
-        List<Unit> sortedUnits = gm.GetAllUnitsSortedByActionValue();
+        //获取未来行动预测（星穹铁道机制）
+        List<GameManager.FutureAction> futureActions = gm.GetFutureActionsForUI(30);
+
+        //转换为单位列表用于显示（去重，每个单位只显示一次，显示它下一次行动的时间）
+        Dictionary<Unit, GameManager.FutureAction> unitNextAction = new Dictionary<Unit, GameManager.FutureAction>();
+
+        // 先添加当前行动的单位
+        if (gm.currentActiveUnit != null && gm.currentActiveUnit.health > 0)
+        {
+            unitNextAction[gm.currentActiveUnit] = new GameManager.FutureAction
+            {
+                unit = gm.currentActiveUnit,
+                roundIndex = 0,
+                predictedTime = 0f,
+                predictedActionValue = gm.currentActiveUnit.currentActionValue,
+                predictedSpeed = gm.currentActiveUnit.GetEffectiveRoundSpeed()
+            };
+        }
+
+        // 添加未来行动的单位（每个单位只取第一次出现的）
+        foreach (var futureAction in futureActions)
+        {
+            if (futureAction.unit != null && futureAction.unit.health > 0)
+            {
+                // 跳过当前行动的单位（已经在上面添加了）
+                if (futureAction.unit != gm.currentActiveUnit || futureAction.roundIndex != 0)
+                {
+                    if (!unitNextAction.ContainsKey(futureAction.unit))
+                    {
+                        unitNextAction[futureAction.unit] = futureAction;
+                    }
+                }
+            }
+        }
+
+        // 转换为排序后的单位列表（按预计时间排序）
+        List<Unit> sortedUnits = new List<Unit>();
+        if (gm.currentActiveUnit != null && gm.currentActiveUnit.health > 0)
+        {
+            sortedUnits.Add(gm.currentActiveUnit); // 当前行动的单位在最上面
+        }
+
+        // 其他单位按预计时间排序
+        var otherActions = unitNextAction.Values
+            .Where(a => a.unit != gm.currentActiveUnit)
+            .OrderBy(a => a.predictedTime)
+            .ToList();
+
+        foreach (var action in otherActions)
+        {
+            sortedUnits.Add(action.unit);
+        }
 
         if (sortedUnits == null || sortedUnits.Count == 0)
         {

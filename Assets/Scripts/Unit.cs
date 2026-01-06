@@ -31,6 +31,26 @@ public class Unit : MonoBehaviour
     public int roundspeed; //回合速度，决定行动顺序
     public float currentActionValue; //当前行动值（累积值）
 
+    //速度修改器系统（星穹铁道机制：支持buff/debuff）
+    [System.Serializable]
+    public class SpeedModifier
+    {
+        public int speedChange;        // 速度变化值（正数为加速，负数为减速）
+        public int remainingRounds;    // 剩余回合数（0=永久，-1=直到手动移除）
+        public Unit source;            // 来源单位（可选）
+        public string description;     // 描述（可选）
+
+        public SpeedModifier(int speedChange, int remainingRounds, Unit source = null, string description = "")
+        {
+            this.speedChange = speedChange;
+            this.remainingRounds = remainingRounds;
+            this.source = source;
+            this.description = description;
+        }
+    }
+
+    private List<SpeedModifier> speedModifiers = new List<SpeedModifier>(); // 速度修改器列表
+
     //角色状态
     public bool hasMoved;
     public bool hasAttacked;
@@ -935,5 +955,114 @@ public class Unit : MonoBehaviour
 
         this.health -= (int)damage;
 
+    }
+
+    // ========== 速度修改器系统（星穹铁道机制） ==========
+
+    /// <summary>
+    /// 获取速度修改器列表
+    /// </summary>
+    public List<SpeedModifier> GetSpeedModifiers()
+    {
+        return speedModifiers;
+    }
+
+    /// <summary>
+    /// 添加速度修改器
+    /// </summary>
+    /// <param name="speedChange">速度变化值（正数为加速，负数为减速）</param>
+    /// <param name="remainingRounds">剩余回合数（0=永久，-1=直到手动移除）</param>
+    /// <param name="source">来源单位（可选）</param>
+    /// <param name="description">描述（可选）</param>
+    public void AddSpeedModifier(int speedChange, int remainingRounds, Unit source = null, string description = "")
+    {
+        speedModifiers.Add(new SpeedModifier(speedChange, remainingRounds, source, description));
+    }
+
+    /// <summary>
+    /// 移除速度修改器
+    /// </summary>
+    /// <param name="modifier">要移除的修改器</param>
+    public void RemoveSpeedModifier(SpeedModifier modifier)
+    {
+        if (speedModifiers.Contains(modifier))
+        {
+            speedModifiers.Remove(modifier);
+        }
+    }
+
+    /// <summary>
+    /// 获取当前有效速度（考虑所有速度修改器）
+    /// </summary>
+    public int GetEffectiveRoundSpeed()
+    {
+        int effectiveSpeed = roundspeed;
+
+        foreach (var modifier in speedModifiers)
+        {
+            effectiveSpeed += modifier.speedChange;
+        }
+
+        // 确保速度至少为1（避免除零错误）
+        return Mathf.Max(1, effectiveSpeed);
+    }
+
+    /// <summary>
+    /// 获取指定回合的有效速度（用于预测系统）
+    /// </summary>
+    /// <param name="roundIndex">回合索引（0=当前回合，1=下一个回合，2=下下个回合...）</param>
+    public int GetEffectiveRoundSpeedForRound(int roundIndex)
+    {
+        int effectiveSpeed = roundspeed;
+
+        foreach (var modifier in speedModifiers)
+        {
+            // 永久修改器（remainingRounds = 0）始终生效
+            if (modifier.remainingRounds == 0)
+            {
+                effectiveSpeed += modifier.speedChange;
+            }
+            // 临时修改器：检查是否在指定回合仍然有效
+            else if (modifier.remainingRounds > 0)
+            {
+                // 如果剩余回合数 > roundIndex，说明在这个回合仍然有效
+                if (modifier.remainingRounds > roundIndex)
+                {
+                    effectiveSpeed += modifier.speedChange;
+                }
+            }
+            // remainingRounds = -1 表示直到手动移除，始终生效
+            else if (modifier.remainingRounds == -1)
+            {
+                effectiveSpeed += modifier.speedChange;
+            }
+        }
+
+        // 确保速度至少为1（避免除零错误）
+        return Mathf.Max(1, effectiveSpeed);
+    }
+
+    /// <summary>
+    /// 回合结束时调用，减少速度修改器的剩余回合数
+    /// </summary>
+    public void OnTurnEnd()
+    {
+        // 从后往前遍历，避免移除时索引问题
+        for (int i = speedModifiers.Count - 1; i >= 0; i--)
+        {
+            var modifier = speedModifiers[i];
+
+            // 永久修改器（remainingRounds = 0）或手动移除的（remainingRounds = -1）不减少
+            if (modifier.remainingRounds > 0)
+            {
+                modifier.remainingRounds--;
+
+                // 如果剩余回合数为0，移除该修改器
+                if (modifier.remainingRounds == 0)
+                {
+                    speedModifiers.RemoveAt(i);
+                }
+            }
+        }
     }
 }

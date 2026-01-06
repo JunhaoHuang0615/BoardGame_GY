@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
@@ -31,8 +32,9 @@ public class GameManager : MonoBehaviour
     //public int nowPlayerID; //当前回合可操控的棋子
     //public int nextTurnPlayerID; //下一回合可操控的棋子ID
 
-    //行动值系统
-    public const float roundDistance = 100f; //行动条总长度
+    //行动值系统（星穹铁道机制）
+    public const float baseActionValue = 10000f; //基础行动值（星穹铁道用10000）
+    public const float roundDistance = 100f; //保留用于向后兼容
     public Unit currentActiveUnit; //当前可以行动的单位
     public bool isProcessingTurn = false; //是否正在处理回合
 
@@ -162,7 +164,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //初始化行动值系统
+    //初始化行动值系统（星穹铁道机制）
     void InitializeActionValueSystem()
     {
         //清空行动队列
@@ -174,46 +176,65 @@ public class GameManager : MonoBehaviour
             {
                 unit.roundspeed = 100; //默认速度
             }
-            //初始行动值设为0，让它们从同一起跑线开始累积
-            unit.currentActionValue = 0f;
+            //星穹铁道机制：初始行动值 = 10000 ÷ 速度
+            //速度越高，行动值越小，出手越快
+            int effectiveSpeed = unit.GetEffectiveRoundSpeed();
+            unit.currentActionValue = baseActionValue / effectiveSpeed;
             //调用Idle()方法，设置单位进入idle状态（stand = false）
             unit.Idle();
         }
     }
 
-    //处理行动值回合（基于队列系统，单线程管理）
+    //处理行动值回合（星穹铁道机制：所有单位行动值同步减少）
     public void ProcessActionValueTurn()
     {
-        //如果正在处理回合，或者已经有单位在行动，直接返回，不累积也不选择
+        //如果正在处理回合，或者已经有单位在行动，直接返回
         if (isProcessingTurn || currentActiveUnit != null)
         {
             return;
         }
 
-        //累积所有单位的行动值（每帧累积一次，基于速度）
-        float deltaTime = Time.deltaTime;
-        //调整速度倍数：原来10000时用200，现在100应该用2（按比例缩小100倍）
-        float speedMultiplier = 2f; //速度倍数，用于调整累积速度
+        //星穹铁道机制：所有单位行动值同步减少
+        //找到行动值最小的单位（最快到达0的单位）
+        float minActionValue = float.MaxValue;
+        Unit fastestUnit = null;
 
         foreach (Unit unit in allUnits)
         {
-            //累积行动值的条件：
-            //1. 单位活着
-            //2. 不是当前正在行动的单位（currentActiveUnit）
-            //3. 星穹铁道机制：只要不在行动，就继续累积，允许超过100
-            //   这样速度快的单位可以超过100，用于排序（超过100的部分决定谁先行动）
             if (unit != null && unit.health > 0 && unit != currentActiveUnit)
             {
-                //只要不是当前行动的单位，就继续累积（不管是否达到100）
-                unit.currentActionValue += unit.roundspeed * deltaTime * speedMultiplier;
+                if (unit.currentActionValue < minActionValue)
+                {
+                    minActionValue = unit.currentActionValue;
+                    fastestUnit = unit;
+                }
             }
         }
 
-        //更新行动队列：将达到阈值的单位加入队列
+        if (fastestUnit == null)
+        {
+            return; // 没有可用单位
+        }
+
+        //计算减少量：基于最快单位的速度
+        //行动值减少速度 = 速度（因为行动值 = 10000/速度，所以减少速度与速度成正比）
+        float deltaTime = Time.deltaTime;
+        float speedMultiplier = 2f; //速度倍数，用于调整时间推进速度
+        float reductionAmount = fastestUnit.GetEffectiveRoundSpeed() * deltaTime * speedMultiplier;
+
+        //所有单位行动值同步减少
+        foreach (Unit unit in allUnits)
+        {
+            if (unit != null && unit.health > 0 && unit != currentActiveUnit)
+            {
+                unit.currentActionValue -= reductionAmount;
+            }
+        }
+
+        //更新行动队列：行动值 <= 0 的单位可以行动
         UpdateActionQueue();
 
         //如果队列不为空，处理队列头部的单位（每次只处理一个）
-        //关键：在检查队列之前，确保没有单位在行动
         if (actionQueue.Count > 0)
         {
             //再次检查，确保没有单位在行动（双重保险）
@@ -222,7 +243,7 @@ public class GameManager : MonoBehaviour
                 return;
             }
 
-            //队列按行动值从大到小排序，取第一个
+            //队列按行动值从小到大排序（行动值小的先行动，因为先到0）
             Unit nextUnit = actionQueue[0];
             actionQueue.RemoveAt(0); //从队列移除
 
@@ -235,7 +256,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //更新行动队列：将达到阈值的单位加入队列（如果还没在队列中）
+    //更新行动队列：行动值 <= 0 的单位加入队列（星穹铁道机制）
     private void UpdateActionQueue()
     {
         foreach (Unit unit in allUnits)
@@ -243,19 +264,30 @@ public class GameManager : MonoBehaviour
             //检查条件：
             //1. 单位活着
             //2. 不是当前正在行动的单位（currentActiveUnit）
-            //3. 行动值达到要求（currentActionValue >= roundDistance）
+            //3. 行动值 <= 0（星穹铁道机制：行动值先归零者先行动）
             //4. 还没在队列中
             if (unit != null && unit.health > 0 &&
                 unit != currentActiveUnit &&
-                unit.currentActionValue >= roundDistance &&
+                unit.currentActionValue <= 0f &&
                 !actionQueue.Contains(unit))
             {
                 actionQueue.Add(unit);
             }
         }
 
-        //按行动值从大到小排序（行动值大的先行动）
-        actionQueue.Sort((a, b) => b.currentActionValue.CompareTo(a.currentActionValue));
+        //按行动值从小到大排序（行动值小的先行动，因为先到0）
+        //同行动值判定：可以添加我方优先等逻辑
+        actionQueue.Sort((a, b) =>
+        {
+            int valueCompare = a.currentActionValue.CompareTo(b.currentActionValue);
+            if (valueCompare != 0)
+            {
+                return valueCompare;
+            }
+            // 同行动值时，可以按其他规则排序（如我方优先、队伍顺序等）
+            // 这里暂时按速度排序（速度快的优先）
+            return b.GetEffectiveRoundSpeed().CompareTo(a.GetEffectiveRoundSpeed());
+        });
     }
 
     //获取行动队列（用于调试和显示）
@@ -291,52 +323,20 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        //其他单位按"下一个要行动的顺序"排序（从小到大，即下一个要行动的排在前面）
-        //排序规则：
-        //1. 已经达到行动值的单位，按行动值从大到小排序（行动值大的先行动）
-        //2. 还没达到行动值的单位，按"谁先达到行动值"排序（先达到的排在前面）
+        //其他单位按"下一个要行动的顺序"排序（星穹铁道机制）
+        //排序规则：按行动值从小到大排序（行动值小的先行动，因为先到0）
         sortedUnits.Sort((a, b) =>
         {
-            bool aReady = a.currentActionValue >= roundDistance;
-            bool bReady = b.currentActionValue >= roundDistance;
-
-            if (aReady && bReady)
+            //星穹铁道机制：行动值小的先行动
+            int valueCompare = a.currentActionValue.CompareTo(b.currentActionValue);
+            if (valueCompare != 0)
             {
-                //都达到了，按行动值从大到小排序（行动值大的先行动）
-                //这与UpdateActionQueue的排序逻辑一致
-                return b.currentActionValue.CompareTo(a.currentActionValue);
+                return valueCompare;
             }
-            else if (aReady && !bReady)
-            {
-                //a达到了，b没达到，a排在前面（已经达到的优先）
-                return -1;
-            }
-            else if (!aReady && bReady)
-            {
-                //a没达到，b达到了，b排在前面
-                return 1;
-            }
-            else
-            {
-                //都没达到，按"谁先达到行动值"排序
-                //计算还需要的行动值
-                float aRemaining = roundDistance - a.currentActionValue;
-                float bRemaining = roundDistance - b.currentActionValue;
 
-                //按"还需要多少时间"排序：剩余行动值 / 速度
-                //时间越短，越先达到，应该排在前面
-                float aTimeNeeded = aRemaining / a.roundspeed;
-                float bTimeNeeded = bRemaining / b.roundspeed;
-
-                int timeCompare = aTimeNeeded.CompareTo(bTimeNeeded);
-                if (timeCompare != 0)
-                {
-                    return timeCompare; //时间短的排在前面
-                }
-
-                //如果时间相同，按速度从大到小排序（速度快的优先）
-                return b.roundspeed.CompareTo(a.roundspeed);
-            }
+            //同行动值时，可以按其他规则排序（如我方优先、队伍顺序等）
+            //这里暂时按速度排序（速度快的优先）
+            return b.GetEffectiveRoundSpeed().CompareTo(a.GetEffectiveRoundSpeed());
         });
 
         //现在sortedUnits的顺序是：下一个要行动的 -> 下下个要行动的 -> 下下下个要行动的 -> ...
@@ -356,20 +356,187 @@ public class GameManager : MonoBehaviour
         return sortedUnits;
     }
 
-    //获取单位的行动值百分比（允许超过1.0，用于UI显示）
+    //获取单位的行动值百分比（星穹铁道机制：用于UI显示）
     public float GetUnitActionValuePercent(Unit unit)
     {
         if (unit == null) return 0f;
-        //允许超过100%，用于UI显示（可以显示为超过100%的进度条）
-        //UI显示时会限制在1.0以内，但这里返回实际值用于排序和显示
-        return unit.currentActionValue / roundDistance;
+        //星穹铁道机制：行动值 = 10000 ÷ 速度
+        //UI显示：当前行动值 / 单次行动所需行动值
+        int effectiveSpeed = unit.GetEffectiveRoundSpeed();
+        float singleActionValue = baseActionValue / effectiveSpeed;
+        //返回百分比（1.0表示刚好可以行动，小于1.0表示还需要等待）
+        return unit.currentActionValue / singleActionValue;
     }
 
-    //处理单个单位的回合（不使用协程，单线程处理）
+    // ========== 预测系统（星穹铁道机制） ==========
+
+    /// <summary>
+    /// 预测未来行动的数据结构
+    /// </summary>
+    [Serializable]
+    public class FutureAction
+    {
+        public Unit unit;                    // 单位
+        public int roundIndex;               // 回合索引（0=当前回合，1=下一个回合，2=下下个回合）
+        public float predictedTime;          // 预计行动时间（从当前时刻开始）
+        public float predictedActionValue;   // 预计行动值
+        public int predictedSpeed;           // 预计速度（考虑buff/debuff）
+    }
+
+    /// <summary>
+    /// 获取未来行动顺序预测（星穹铁道机制：模拟时间推进）
+    /// </summary>
+    /// <param name="maxActions">最大预测行动数（用于覆盖多个大回合）</param>
+    /// <returns>未来行动列表，按时间排序</returns>
+    public List<FutureAction> GetFutureActions(int maxActions = 20)
+    {
+        List<FutureAction> futureActions = new List<FutureAction>();
+
+        // 速度倍数（与ProcessActionValueTurn中的一致）
+        float speedMultiplier = 2f;
+
+        // 复制当前状态用于模拟
+        Dictionary<Unit, float> simulatedActionValues = new Dictionary<Unit, float>();
+        Dictionary<Unit, int> unitRoundCount = new Dictionary<Unit, int>(); // 记录每个单位已行动次数
+
+        foreach (Unit unit in allUnits)
+        {
+            if (unit != null && unit.health > 0)
+            {
+                simulatedActionValues[unit] = unit.currentActionValue;
+                unitRoundCount[unit] = 0;
+            }
+        }
+
+        float currentTime = 0f;
+        int actionCount = 0;
+
+        // 模拟时间推进，直到预测足够多的行动
+        while (actionCount < maxActions && simulatedActionValues.Count > 0)
+        {
+            // 找到行动值最小的单位（最先到0）
+            Unit nextUnit = null;
+            float minActionValue = float.MaxValue;
+
+            foreach (var kvp in simulatedActionValues)
+            {
+                if (kvp.Value < minActionValue)
+                {
+                    minActionValue = kvp.Value;
+                    nextUnit = kvp.Key;
+                }
+            }
+
+            if (nextUnit == null) break;
+
+            // 星穹铁道机制：
+            // 1. 找到行动值最小的单位（minActionValue），它即将行动
+            // 2. 所有单位行动值同步减少 minActionValue（让最小值的单位到0）
+            // 3. 该单位行动，所有单位再减去它的单次行动所需行动值
+
+            int effectiveSpeed = nextUnit.GetEffectiveRoundSpeedForRound(unitRoundCount[nextUnit]);
+            float singleActionValue = baseActionValue / effectiveSpeed; // 此次行动单位的单次行动所需行动值
+
+            // 计算时间推进：时间 = minActionValue / (最快单位的速度 * 速度倍数)
+            // 找到所有单位中速度最快的，用于计算时间推进
+            int fastestSpeed = 0;
+            foreach (var unit in simulatedActionValues.Keys)
+            {
+                int speed = unit.GetEffectiveRoundSpeedForRound(unitRoundCount[unit]);
+                if (speed > fastestSpeed)
+                {
+                    fastestSpeed = speed;
+                }
+            }
+
+            if (fastestSpeed == 0) break;
+
+            // 时间推进 = minActionValue / (最快速度 * 速度倍数)
+            // 因为所有单位行动值同步减少minActionValue，所以时间基于这个减少量
+            float timeStep = minActionValue / (fastestSpeed * speedMultiplier);
+            currentTime += timeStep;
+
+            // 第一步：所有单位行动值减去 minActionValue（让最小值的单位到0）
+            foreach (var unit in simulatedActionValues.Keys.ToList())
+            {
+                simulatedActionValues[unit] -= minActionValue;
+            }
+
+            // 第二步：该单位行动，所有单位再减去它的单次行动所需行动值
+            float actionValueUsed = singleActionValue;
+            foreach (var unit in simulatedActionValues.Keys.ToList())
+            {
+                simulatedActionValues[unit] -= actionValueUsed;
+            }
+
+            // 行动单位重新设置为下一次行动所需行动值
+            int nextRoundSpeed = nextUnit.GetEffectiveRoundSpeedForRound(unitRoundCount[nextUnit]);
+            simulatedActionValues[nextUnit] = baseActionValue / nextRoundSpeed;
+            unitRoundCount[nextUnit]++;
+
+            // 创建未来行动记录
+            FutureAction futureAction = new FutureAction
+            {
+                unit = nextUnit,
+                roundIndex = unitRoundCount[nextUnit] - 1, // 当前回合索引
+                predictedTime = currentTime,
+                predictedActionValue = 0f, // 行动后为0
+                predictedSpeed = effectiveSpeed
+            };
+
+            futureActions.Add(futureAction);
+            actionCount++;
+        }
+
+        // 按预计时间排序
+        futureActions.Sort((a, b) => a.predictedTime.CompareTo(b.predictedTime));
+
+        return futureActions;
+    }
+
+    /// <summary>
+    /// 获取未来行动的UI显示列表（用于ActionOrderUI）
+    /// </summary>
+    /// <param name="maxDisplayCount">最大显示数量</param>
+    /// <returns>未来行动列表</returns>
+    public List<FutureAction> GetFutureActionsForUI(int maxDisplayCount = 20)
+    {
+        List<FutureAction> futureActions = GetFutureActions(maxDisplayCount);
+
+        // 限制显示数量（避免UI过多）
+        if (futureActions.Count > maxDisplayCount)
+        {
+            futureActions = futureActions.GetRange(0, maxDisplayCount);
+        }
+
+        return futureActions;
+    }
+
+    //处理单个单位的回合（星穹铁道机制）
     private void HandleUnitTurn(Unit unit)
     {
-        //减少行动值（行动后扣除roundDistance）
-        unit.currentActionValue -= roundDistance;
+        //星穹铁道机制：所有单位的行动值减去此次行动单位的行动值
+        //此次行动单位的单次行动所需行动值 = 10000 ÷ 速度
+        int effectiveSpeed = unit.GetEffectiveRoundSpeed();
+        float actionValueUsed = baseActionValue / effectiveSpeed;
+
+        //所有单位的行动值减去此次行动单位的行动值
+        foreach (Unit u in allUnits)
+        {
+            if (u != null && u.health > 0)
+            {
+                u.currentActionValue -= actionValueUsed;
+            }
+        }
+
+        //行动单位重新设置为下一次行动所需行动值
+        unit.currentActionValue = baseActionValue / effectiveSpeed;
+
+        //单位行动结束时，减少速度修改器的剩余回合数（如果有）
+        if (unit.GetSpeedModifiers().Count > 0)
+        {
+            unit.OnTurnEnd();
+        }
 
         //重置单位状态，允许行动
         unit.hasMoved = false;
